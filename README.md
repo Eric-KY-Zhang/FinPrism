@@ -29,9 +29,9 @@
 
 ### 1. 下载
 
-去 **[Releases 页面](https://github.com/Eric-KY-Zhang/FinPrism/releases/latest)** 下载 `上市公司财务数据查询v1.0_release.xlsm`。
+去 **[Releases 页面](https://github.com/Eric-KY-Zhang/FinPrism/releases/latest)** 下载 `FinPrism-v1.0.xlsm`(575 KB)。
 
-> 如果你想看 / 改 VBA 源码,下载 `_source.xlsm` 版本。
+> 如果你想看 / 改 VBA 源码,下载 `FinPrism-v1.0-source.xlsm`(702 KB)。
 
 ### 2. 启用宏
 
