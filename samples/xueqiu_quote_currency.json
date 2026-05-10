@@ -1,0 +1,267 @@
+{
+  "url_template": "https://stock.xueqiu.com/v5/stock/realtime/quotec.json",
+  "fetched_at": "2026-05-03T22:08:47",
+  "cookie_present_in_env": false,
+  "diagnosis": {
+    "plan_symbol_form_works": false,
+    "needed_symbol_suffix": ".FX",
+    "needed_warmup": "https://xueqiu.com/hq",
+    "needed_accept_encoding": "gzip, deflate (NOT 'identity')",
+    "schema_note": "Response shape is {\"data\": [...], \"error_code\": 0}. Items are at parsed['data'], NOT parsed['data']['items']."
+  },
+  "plan_call": {
+    "label": "plan-spec: identity encoding, no warmup, no .FX",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Accept": "application/json, text/plain, */*",
+      "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+      "Accept-Encoding": "identity",
+      "Referer": "https://xueqiu.com/",
+      "Origin": "https://xueqiu.com"
+    },
+    "result": {
+      "url": "https://stock.xueqiu.com/v5/stock/realtime/quotec.json?symbol=USDCNY%2CHKDCNY%2CKRWCNY",
+      "status": 200,
+      "len": 0,
+      "body_excerpt": null,
+      "parsed": null
+    }
+  },
+  "warmup": {
+    "url": "https://xueqiu.com/hq",
+    "status": 200,
+    "cookies_obtained": [
+      "acw_tc",
+      "cookiesu",
+      "u",
+      "xq_a_token",
+      "xq_id_token",
+      "xq_r_token",
+      "xqat"
+    ]
+  },
+  "no_cookie_working": {
+    "label": "working: warmup + .FX + gzip",
+    "headers_diff": {
+      "Accept-Encoding": "gzip, deflate"
+    },
+    "result": {
+      "url": "https://stock.xueqiu.com/v5/stock/realtime/quotec.json?symbol=USDCNY.FX%2CHKDCNY.FX%2CKRWCNY.FX",
+      "status": 200,
+      "len": 1810,
+      "body_excerpt": "{\"data\":[{\"symbol\":\"USDCNY.FX\",\"current\":6.8282,\"percent\":0.0,\"chg\":0.0,\"timestamp\":1777582801977,\"volume\":null,\"amount\":null,\"market_capital\":null,\"float_market_capital\":null,\"turnover_rate\":null,\"amplitude\":null,\"open\":null,\"last_close\":6.8282,\"high\":null,\"low\":null,\"avg_price\":null,\"trade_volume\":null,\"side\":0,\"is_trade\":false,\"level\":1,\"trade_session\":2,\"trade_type\":null,\"current_year_percent\":-2.37,\"trade_unique_id\":null,\"type\":100,\"bid_appl_seq_num\":null,\"offer_appl_seq_num\":null,\"volume_ext\":null,\"traded_amount_ext\":null,\"trade_type_v2\":null,\"yield_to_maturity\":null},{\"symbol\":\"KRWCNY.FX\",\"current\":0.00464,\"percent\":0.22,\"chg\":1.0E-5,\"timestamp\":1777669191575,\"volume\":null,\"amount\":null,\"market_capital\":null,\"float_market_capital\":null,\"turnover_rate\":null,\"amplitude\":0.65,\"open\":0.00464,\"last_close\":0.00463,\"high\":0.00465,\"low\":0.00462,\"avg_price\":0.0046395,\"trade_volume\":null,\"side\":-1,\"is_trade\":true,\"level\":1,\"trade_session\":2,\"trade_type\":null,\"current_year_percent\":-4.53,\"trade_unique_id\":\"7050\",\"type\":100,\"bid_appl_seq_num\":null,\"offer_appl_seq_num\":null,\"volume_ext\":null,\"traded_amount_ext\":null,\"trade_type_v2\":null,\"yield_to_maturity\":null},{\"symbol\":\"HKDCNY.FX\",\"cu",
+      "parsed": {
+        "data": [
+          {
+            "symbol": "USDCNY.FX",
+            "current": 6.8282,
+            "percent": 0.0,
+            "chg": 0.0,
+            "timestamp": 1777582801977,
+            "volume": null,
+            "amount": null,
+            "market_capital": null,
+            "float_market_capital": null,
+            "turnover_rate": null,
+            "amplitude": null,
+            "open": null,
+            "last_close": 6.8282,
+            "high": null,
+            "low": null,
+            "avg_price": null,
+            "trade_volume": null,
+            "side": 0,
+            "is_trade": false,
+            "level": 1,
+            "trade_session": 2,
+            "trade_type": null,
+            "current_year_percent": -2.37,
+            "trade_unique_id": null,
+            "type": 100,
+            "bid_appl_seq_num": null,
+            "offer_appl_seq_num": null,
+            "volume_ext": null,
+            "traded_amount_ext": null,
+            "trade_type_v2": null,
+            "yield_to_maturity": null
+          },
+          {
+            "symbol": "KRWCNY.FX",
+            "current": 0.00464,
+            "percent": 0.22,
+            "chg": 1e-05,
+            "timestamp": 1777669191575,
+            "volume": null,
+            "amount": null,
+            "market_capital": null,
+            "float_market_capital": null,
+            "turnover_rate": null,
+            "amplitude": 0.65,
+            "open": 0.00464,
+            "last_close": 0.00463,
+            "high": 0.00465,
+            "low": 0.00462,
+            "avg_price": 0.0046395,
+            "trade_volume": null,
+            "side": -1,
+            "is_trade": true,
+            "level": 1,
+            "trade_session": 2,
+            "trade_type": null,
+            "current_year_percent": -4.53,
+            "trade_unique_id": "7050",
+            "type": 100,
+            "bid_appl_seq_num": null,
+            "offer_appl_seq_num": null,
+            "volume_ext": null,
+            "traded_amount_ext": null,
+            "trade_type_v2": null,
+            "yield_to_maturity": null
+          },
+          {
+            "symbol": "HKDCNY.FX",
+            "current": 0.87156,
+            "percent": -0.03,
+            "chg": -0.00024,
+            "timestamp": 1777669192206,
+            "volume": null,
+            "amount": null,
+            "market_capital": null,
+            "float_market_capital": null,
+            "turnover_rate": null,
+            "amplitude": 0.04,
+            "open": 0.87179,
+            "last_close": 0.8718,
+            "high": 0.8718,
+            "low": 0.87143,
+            "avg_price": 0.8715819,
+            "trade_volume": null,
+            "side": 0,
+            "is_trade": true,
+            "level": 1,
+            "trade_session": 2,
+            "trade_type": null,
+            "current_year_percent": -3.01,
+            "trade_unique_id": "17996",
+            "type": 100,
+            "bid_appl_seq_num": null,
+            "offer_appl_seq_num": null,
+            "volume_ext": null,
+            "traded_amount_ext": null,
+            "trade_type_v2": null,
+            "yield_to_maturity": null
+          }
+        ],
+        "error_code": 0,
+        "error_description": null
+      }
+    }
+  },
+  "with_cookie": {
+    "label": "with XUEQIU_COOKIE env",
+    "result": null
+  },
+  "symbol_variants": {
+    "USDCNY": {
+      "url": "https://stock.xueqiu.com/v5/stock/realtime/quotec.json?symbol=USDCNY",
+      "status": 200,
+      "len": 51,
+      "body_excerpt": "{\"data\":[],\"error_code\":0,\"error_description\":null}",
+      "parsed": {
+        "data": [],
+        "error_code": 0,
+        "error_description": null
+      }
+    },
+    "USDCNY.FX": {
+      "url": "https://stock.xueqiu.com/v5/stock/realtime/quotec.json?symbol=USDCNY.FX",
+      "status": 200,
+      "len": 622,
+      "body_excerpt": "{\"data\":[{\"symbol\":\"USDCNY.FX\",\"current\":6.8282,\"percent\":0.0,\"chg\":0.0,\"timestamp\":1777582801977,\"volume\":null,\"amount\":null,\"market_capital\":null,\"float_market_capital\":null,\"turnover_rate\":null,\"amplitude\":null,\"open\":null,\"last_close\":6.8282,\"high\":null,\"low\":null,\"avg_price\":null,\"trade_volume\":null,\"side\":0,\"is_trade\":false,\"level\":1,\"trade_session\":2,\"trade_type\":null,\"current_year_percent\":-2.37,\"trade_unique_id\":null,\"type\":100,\"bid_appl_seq_num\":null,\"offer_appl_seq_num\":null,\"volume_ext\":null,\"traded_amount_ext\":null,\"trade_type_v2\":null,\"yield_to_maturity\":null}],\"error_code\":0,\"error_description\":null}",
+      "parsed": {
+        "data": [
+          {
+            "symbol": "USDCNY.FX",
+            "current": 6.8282,
+            "percent": 0.0,
+            "chg": 0.0,
+            "timestamp": 1777582801977,
+            "volume": null,
+            "amount": null,
+            "market_capital": null,
+            "float_market_capital": null,
+            "turnover_rate": null,
+            "amplitude": null,
+            "open": null,
+            "last_close": 6.8282,
+            "high": null,
+            "low": null,
+            "avg_price": null,
+            "trade_volume": null,
+            "side": 0,
+            "is_trade": false,
+            "level": 1,
+            "trade_session": 2,
+            "trade_type": null,
+            "current_year_percent": -2.37,
+            "trade_unique_id": null,
+            "type": 100,
+            "bid_appl_seq_num": null,
+            "offer_appl_seq_num": null,
+            "volume_ext": null,
+            "traded_amount_ext": null,
+            "trade_type_v2": null,
+            "yield_to_maturity": null
+          }
+        ],
+        "error_code": 0,
+        "error_description": null
+      }
+    },
+    "CNY": {
+      "url": "https://stock.xueqiu.com/v5/stock/realtime/quotec.json?symbol=CNY",
+      "status": 200,
+      "len": 616,
+      "body_excerpt": "{\"data\":[{\"symbol\":\"CNY\",\"current\":44.25,\"percent\":null,\"chg\":null,\"timestamp\":1777642200002,\"volume\":null,\"amount\":null,\"market_capital\":3.894E7,\"float_market_capital\":null,\"turnover_rate\":null,\"amplitude\":null,\"open\":null,\"last_close\":44.25,\"high\":null,\"low\":null,\"avg_price\":null,\"trade_volume\":null,\"side\":0,\"is_trade\":false,\"level\":3,\"trade_session\":2,\"trade_type\":null,\"current_year_percent\":null,\"trade_unique_id\":null,\"type\":4,\"bid_appl_seq_num\":null,\"offer_appl_seq_num\":null,\"volume_ext\":null,\"traded_amount_ext\":null,\"trade_type_v2\":null,\"yield_to_maturity\":null}],\"error_code\":0,\"error_description\":null}",
+      "parsed": {
+        "data": [
+          {
+            "symbol": "CNY",
+            "current": 44.25,
+            "percent": null,
+            "chg": null,
+            "timestamp": 1777642200002,
+            "volume": null,
+            "amount": null,
+            "market_capital": 38940000.0,
+            "float_market_capital": null,
+            "turnover_rate": null,
+            "amplitude": null,
+            "open": null,
+            "last_close": 44.25,
+            "high": null,
+            "low": null,
+            "avg_price": null,
+            "trade_volume": null,
+            "side": 0,
+            "is_trade": false,
+            "level": 3,
+            "trade_session": 2,
+            "trade_type": null,
+            "current_year_percent": null,
+            "trade_unique_id": null,
+            "type": 4,
+            "bid_appl_seq_num": null,
+            "offer_appl_seq_num": null,
+            "volume_ext": null,
+            "traded_amount_ext": null,
+            "trade_type_v2": null,
+            "yield_to_maturity": null
+          }
+        ],
+        "error_code": 0,
+        "error_description": null
+      }
+    }
+  }
+}

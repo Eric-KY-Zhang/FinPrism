@@ -1,0 +1,108 @@
+{
+  "fetched_at": "2026-05-03T22:12:03",
+  "cookie_present_in_env": false,
+  "warmup": {
+    "status": 200,
+    "cookies": [
+      "acw_tc",
+      "cookiesu",
+      "u",
+      "xq_a_token",
+      "xq_id_token",
+      "xq_r_token",
+      "xqat"
+    ]
+  },
+  "candidates": [
+    {
+      "label": "HK_02519_xueqiu_quote",
+      "kind": "hk_quote",
+      "url": "https://stock.xueqiu.com/v5/stock/quote.json?symbol=02519&extend=detail",
+      "status": 200,
+      "body_len": 1349,
+      "body_excerpt": "{\"data\":{\"market\":{\"status_id\":8,\"region\":\"HK\",\"status\":\"休市\",\"time_zone\":\"Asia/Shanghai\",\"time_zone_desc\":null,\"delay_tag\":0,\"downgrade_night_session\":false,\"daylight_savings\":true},\"quote\":{\"symbol\":\"02519\",\"high52w\":11.38,\"delayed\":0,\"type\":30,\"tick_size\":0.01,\"float_shares\":414787676,\"high\":4.8,\"float_market_capital\":1.9909808448E9,\"lot_size\":300,\"lock_set\":null,\"chg\":0.3,\"eps\":0.432,\"last_close\":4.5,\"profit_four\":1.793638209E8,\"volume\":2700,\"volume_ratio\":0.34,\"profit_forecast\":1.793638209E8,\"turnover_rate\":0.0,\"low52w\":3.43,\"name\":\"傲基股份\",\"exchange\":\"HK\",\"pe_forecast\":11.1114,\"total_shares\":415205916,\"status\":1,\"code\":\"02519\",\"avg_price\":4.6333,\"percent\":6.67,\"psr\":0.13,\"amplitude\":0.0,\"current\":4.8,\"current_year_percent\":-20.92,\"issue_date\":1730995200000,\"sub_type\":null,\"low\":4.8,\"mar",
+      "error_code": 0,
+      "error_description": "",
+      "company_name": "傲基股份",
+      "currency": "HKD",
+      "exchange": "HK",
+      "type": 30,
+      "status_field": 1,
+      "isin": null,
+      "fin_report_name": null,
+      "listed_date": null,
+      "dump": "samples/aoji_probe_HK_02519_xueqiu_quote.json"
+    },
+    {
+      "label": "HK_02519_xueqiu_finance_balance",
+      "kind": "hk_fin",
+      "url": "https://stock.xueqiu.com/v5/stock/finance/hk/balance.json?symbol=02519&type=all&is_detail=true&count=8",
+      "status": 200,
+      "body_len": 7876,
+      "body_excerpt": "{\"data\":{\"quote_name\":\"傲基股份\",\"currency_name\":\"人民币\",\"sas\":\"国际会计准则\",\"org_type\":1,\"annual_settle_date\":\"12-31\",\"last_report_name\":\"2025年报\",\"statuses\":null,\"currency\":\"CNY\",\"tip\":\"傲基股份财年为每年的1月1日至12月31日，最新披露财报所属2025财年。\",\"list\":[{\"report_date\":1767110400000,\"report_name\":\"2025年报\",\"ctime\":null,\"month_num\":12,\"sd\":\"2025-01-01\",\"ed\":\"2025-12-31\",\"iga\":[1.0173E7,-0.609241760774372],\"fxda\":[3.582364E9,0.024134469887016455],\"numtsh\":[4.15206E8,0.0],\"shpm\":[1.035558E9,0.0],\"caprx\":[0.0,null],\"otrx\":[1.11784E8,-0.020486847408913267],\"trx\":[2.717219E9,0.019856510960603382],\"rpaculo\":[1.569877E9,0.03647215335707943],\"shhfd\":[3.132425E9,0.017179295091671723],\"miint\":[2.0233E7,-0.3208579484425349],\"ncalia\":[1.98362E9,-0.052142620610959506],\"diftatclia\":[6.121199E9,0.002855284053087837],\"cceq\":[2.123193E9,0.",
+      "error_code": 0,
+      "error_description": "",
+      "quote_name": "傲基股份",
+      "currency": "CNY",
+      "last_report_name": "2025年报",
+      "annual_settle_date": "12-31",
+      "list_len": 6,
+      "dump": "samples/aoji_probe_HK_02519_xueqiu_finance_balance.json"
+    },
+    {
+      "label": "HK_09927_xueqiu_quote",
+      "kind": "hk_quote",
+      "url": "https://stock.xueqiu.com/v5/stock/quote.json?symbol=09927&extend=detail",
+      "status": 200,
+      "body_len": 1409,
+      "body_excerpt": "{\"data\":{\"market\":{\"status_id\":8,\"region\":\"HK\",\"status\":\"休市\",\"time_zone\":\"Asia/Shanghai\",\"time_zone_desc\":null,\"delay_tag\":0,\"downgrade_night_session\":false,\"daylight_savings\":true},\"quote\":{\"symbol\":\"09927\",\"high52w\":131.5,\"delayed\":0,\"type\":30,\"tick_size\":0.05,\"float_shares\":108619000,\"high\":80.0,\"float_market_capital\":8.2984916E9,\"lot_size\":100,\"lock_set\":null,\"chg\":-3.0,\"eps\":3.8063,\"last_close\":79.4,\"profit_four\":6.6304996097E9,\"volume\":1643233,\"volume_ratio\":1.61,\"profit_forecast\":6.6304996097E9,\"turnover_rate\":1.51,\"low52w\":76.25,\"name\":\"赛力斯\",\"exchange\":\"HK\",\"pe_forecast\":20.072,\"total_shares\":1741985086,\"status\":1,\"code\":\"09927\",\"avg_price\":76.9797,\"percent\":-3.78,\"psr\":0.713,\"amplitude\":4.72,\"current\":76.4,\"current_year_percent\":-28.66,\"issue_date\":1762272000000,\"sub_type\":null,\"l",
+      "error_code": 0,
+      "error_description": "",
+      "company_name": "赛力斯",
+      "currency": "HKD",
+      "exchange": "HK",
+      "type": 30,
+      "status_field": 1,
+      "isin": null,
+      "fin_report_name": null,
+      "listed_date": null,
+      "dump": "samples/aoji_probe_HK_09927_xueqiu_quote.json"
+    },
+    {
+      "label": "A_003031_xueqiu_quote",
+      "kind": "a_quote",
+      "url": "https://stock.xueqiu.com/v5/stock/quote.json?symbol=SZ003031&extend=detail",
+      "status": 200,
+      "body_len": 1646,
+      "body_excerpt": "{\"data\":{\"market\":{\"status_id\":8,\"region\":\"CN\",\"status\":\"休市\",\"time_zone\":\"Asia/Shanghai\",\"time_zone_desc\":null,\"delay_tag\":0,\"downgrade_night_session\":false,\"daylight_savings\":true},\"quote\":{\"current_ext\":null,\"symbol\":\"SZ003031\",\"volume_ext\":null,\"high52w\":133.08,\"delayed\":0,\"type\":11,\"tick_size\":0.01,\"float_shares\":340156696,\"limit_down\":111.54,\"no_profit\":\"N\",\"high\":129.97,\"float_market_capital\":4.201615509E10,\"timestamp_ext\":null,\"lot_size\":100,\"lock_set\":null,\"weighted_voting_rights\":\"N\",\"chg\":-0.41,\"eps\":1.4,\"last_close\":123.93,\"profit_four\":6.3310394431E8,\"volume\":12483736,\"volume_ratio\":0.95,\"profit_forecast\":7.73213653E8,\"turnover_rate\":3.67,\"low52w\":45.18,\"name\":\"中瓷电子\",\"exchange\":\"SZ\",\"pe_forecast\":72.055,\"total_shares\":451052859,\"status\":1,\"is_vie_desc\":\"否\",\"security_status\":nul",
+      "error_code": 0,
+      "error_description": "",
+      "company_name": "中瓷电子",
+      "currency": "CNY",
+      "exchange": "SZ",
+      "type": 11,
+      "status_field": 1,
+      "isin": null,
+      "fin_report_name": null,
+      "listed_date": null,
+      "dump": "samples/aoji_probe_A_003031_xueqiu_quote.json"
+    },
+    {
+      "label": "A_003031_sina_balance",
+      "kind": "a_sina",
+      "url": "https://money.finance.sina.com.cn/corp/go.php/vFD_BalanceSheet/stockid/003031/ctrl/part/displaytype/4.phtml",
+      "status": 200,
+      "body_len": 81778,
+      "body_excerpt": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\r\n<html xmlns=\"http://www.w3.org/1999/xhtml\">\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=gb2312\" />\r\n<meta http-equiv=\"Content-Security-Policy\" content=\"upgrade-insecure-requests\">\r\n<title>中瓷电子(003031)资产负债表_新浪财经_新浪网</title>\r\n<meta name=\"Keywords\" content=\"中瓷电子资产负债表,003031资产负债表,新浪财经中瓷电子(003031)资产负债表\" />\r\n<meta name=\"Description\" content=\"新浪财经中瓷电子(003031)行情中心,为您提供中瓷电子(003031)资产负债表信息数据查询.\" />\r\n<link media=\"all\" rel=\"stylesheet\" href=\"/corp/view/css/newstyle.css\" />\r\n<link media=\"all\" rel=\"stylesheet\" href=\"/corp/view/css/tables.css\" />\r\n<link media=\"all\" rel=\"stylesheet\" href=\"/corp/view/css/style4.css\" />\r\n\r\n<style type=\"text/css\">\r\nbody,ul,ol,li,",
+      "html_contains_aoji": false,
+      "html_contains_aoji_pinyin": false,
+      "html_contains_unknown": false,
+      "title": "中瓷电子(003031)资产负债表_新浪财经_新浪网",
+      "h1": "<a href=\"http://finance.sina.com.cn/realstock/company/sz003031/nc.shtml\" target=\"_self\">中瓷电子</a>",
+      "dump": "samples/aoji_probe_A_003031_sina_balance.html"
+    }
+  ],
+  "preexisting_evidence": {
+    "samples/xueqiu_HK_02519_balance.json": "Phase 4c HK probe residue (UTF-16-LE encoded): header already shows quote_name=傲基控股, currency=CNY, annual_settle_date=12-31. Strong evidence 02519.HK = 傲基股份."
+  }
+}
