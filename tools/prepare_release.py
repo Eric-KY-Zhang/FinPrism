@@ -206,9 +206,11 @@ Date: 2026-05-17
 ## Highlights
 
 - Added Taiwan market support: sample-pool columns, 4 Taiwan report sheets, diagnostics, and cross-market indicator integration.
+- Added Phase 5a Xueqiu anonymous session warmup: users no longer need to paste or maintain a manual Xueqiu cookie in the sample pool.
 - Moved workbook usage instructions and FX explanations into README; Excel no longer has a separate 使用说明 sheet or FX instruction panel.
 - Simplified 汇率 sheet to a pure data table: report period plus USDCNY/HKDCNY/KRWCNY/TWDCNY EOP/AVG columns.
 - Preserved data-accuracy behavior: missing FX remains blank and diagnostic-driven, never fallback-to-1.
+- Preserved the clean v1.1 workbook layout: sample-pool row 5 is intentionally blank, row 14+ remains the user input area, and 5 markets feed the cross-market indicator sheet.
 
 ## Files
 
