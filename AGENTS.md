@@ -73,13 +73,14 @@ Agent 要遵守自己的角色边界：
 
 - 工具是本地 Excel 桌面工具，不是网络服务，不是采集平台。
 - 用户是财务 / 审计专业人士，界面和文档要用业务语言，不要堆技术黑话。
-- 4 市场正式输出保留：A 股、美股、港股、韩股各 4 张分市场表。
+- 5 市场正式输出保留：A 股、美股、港股、韩股、台股各 4 张分市场表。
 - 跨市场只保留 `跨市场_指标表`，不恢复已删除的跨市场 BS / IS / CF 合表。
 - RMB toggle 必须保持：原币与统一 RMB 可切换，汇率缺失时写空并写诊断，不 fallback 到 1。
 - `GetFxRate` 旧签名保持兼容；新逻辑通过扩展 helper 实现。
 - 诊断 sheet 当前是 17 列 schema，不要回退到 11 列。
 - `.cache/` 是可再生 HTTP 缓存；清空数据不等于清空缓存，除非用户明确点清 HTTP 缓存。
-- `样本池` 用户录入区必须保留，尤其是 Row 14+ 公司代码和简称。
+- `样本池` 用户录入区必须保留，尤其是 Row 14+ 公司代码和简称。Row 5 已弃用 (Phase 5a),保持空白,不要放任何标签或值。
+- `XueqiuHttpGet` 内部已委托 `FetchViaPowerShell` 匿名 warmup;不要在 HK/US fetcher 里恢复 `If Len(strCookie)=0 Then Err.Raise` 早退保护;不要用 openpyxl 改 .xlsm (会清掉所有 Shape / OnAction 绑定)。
 
 ---
 
@@ -125,7 +126,7 @@ Excel COM 是本项目最高频风险源。所有 agent 必须按下面规则处
 - 不要恢复跨市场 BS / IS / CF / 字段映射 sheet。
 - 不要把 stockanalysis fallback 改回手动 toggle。
 - 不要让 FX missing fallback 到 `1`。
-- 不要改 4 市场 fetch 字段映射，除非本轮就是数据源维护。
+- 不要改 5 市场 fetch 字段映射，除非本轮就是数据源维护。
 
 ---
 
@@ -279,12 +280,13 @@ Commit: <hash> <message>
 当前项目已进入 v1.0 release 收尾状态。长期维护时，优先从以下入口恢复上下文：
 
 - `PROJECT_RETROSPECTIVE.md`: 项目复盘和协作方法。
-- `STATUS.md` §EE: Phase 4n 最终优化收口。
+- `STATUS.md` §EE: Phase 4n 最终优化收口。STATUS.md §FF (v1.1 release / TW 台股接入) 和 §GG (Phase 5a 雪球 cookie 自动化) 是当前末尾基线。
 - `ARCHITECTURE.md`: 当前架构、数据流、invariants。
 - `README.md`: 用户使用说明和 release notes。
+- `PHASE5A_CHANGELOG.md`: 雪球 cookie 自动化 (E5 弃用、`XueqiuHttpGet` 委托 `FetchViaPowerShell`) 的事实来源。
 - `tools/run_offline_tests.py`: 离线 parser / QA / fixture 快速检查。
 
 对后续维护者的简短提醒：
 
-> 不要为了“看起来更完整”恢复已删功能。这个项目最终选择的是少而准：4 市场分表 + 1 张跨市场指标表 + RMB toggle + 诊断 / QA / 缓存，而不是全字段跨市场万能合表。
+> 不要为了“看起来更完整”恢复已删功能。这个项目最终选择的是少而准：5 市场分表 + 1 张跨市场指标表 + RMB toggle + 诊断 / QA / 缓存，而不是全字段跨市场万能合表。
 

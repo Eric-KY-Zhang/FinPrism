@@ -120,12 +120,19 @@ py tools/install_modules.py
 性能基线参考(Phase 5b 优化目标):5 家港股全 fresh fetch 在本机约
 **50.7s** ≈ 2.5s / 公司 / statement(20 个 HTTP 调用,每个 ~2.5s 含 PS 启动)。
 
-## 7. 待用户手动决定的事项
+## 7. 后续维护提醒
 
-1. 是否运行 `py scripts/phase5a_update_doc_cells.py --apply --backup`(把
-   样本池!A5 标签从 `雪球 Cookie` 改为 `雪球 Cookie (已弃用,留空)`)。
-2. 是否清空当前 E5 cookie 值。Phase 5a 起 E5 已经不被使用,但留着也不会
-   出错。若要分发 release,见 `tools/release_v1_clean.py` 的 `CleanReleaseWorkbook`
-   宏一并清。
-3. 备份文件 `上市公司财务数据查询.phase5a-pre.bak.xlsm` 是 Phase 5a 前的
-   完整快照,可在出问题时直接覆盖回去。验收无问题后可删除。
+1. **不要再用 openpyxl 改 .xlsm**。Phase 5a 初稿曾经写了
+   `scripts/phase5a_update_doc_cells.py` 走 openpyxl 改 `样本池!A5` 文案,
+   结果触发了 §3a 的按钮被清问题。该脚本和 `tools/phase5a_inspect_doc_cells.py`
+   已经从仓库删除。后续如果要改 workbook 里的 cell 文案,统一改
+   `tools/install_modules.py` 的 `layout_sample_pool` 函数,然后跑
+   `py tools/install_modules.py` 让 Excel COM 重新铺布局并重建按钮。
+2. **样本池 row 5 已从 install 布局里移除**(`config_rows` 不再含 `(5, "雪球 Cookie", ...)`),
+   重装 workbook 后 row 5 自然留空,A5 不会再出现"已弃用"标签。
+3. **E5 cookie 清空**已经做过。如果分发 release,统一走
+   `tools/prepare_release.py`(已经处理 E5/cache/诊断历史的清理,
+   底层调 `模块_工具函数.bas` 里的 `CleanReleaseWorkbook` 宏)。
+4. **回滚路径**见 §4。如果未来要把雪球路径切回登录态 cookie 走 WinHttp,
+   恢复 `XueqiuHttpGet` 函数体到 Phase 5a 前版本并重新启用 HK / US fetcher
+   里的 `If Len(strCookie)=0 Then Err.Raise` 早退保护即可。

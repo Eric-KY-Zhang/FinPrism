@@ -1,6 +1,6 @@
 # 上市公司财务数据查询 — 架构
 
-> Last updated: 2026-05-17 (v1.1 release prep)
+> Last updated: 2026-05-17 (v1.1 + Phase 5a)
 
 本文档描述 `VBA Captor` 目录下的 Excel/VBA 桌面工具架构。它面向后续维护者和 Codex/Reviewer 交接使用,不替代 `STATUS.md` 的逐 phase 追溯记录。
 
@@ -36,7 +36,7 @@
 ```text
 入口层
 └─ 模块_总入口
-   ├─ 一键A股 / 一键美股 / 一键港股 / 一键韩股
+   ├─ 一键A股 / 一键美股 / 一键港股 / 一键韩股 / 一键台股
    ├─ 一键全抓
    ├─ 一键跨市场指标表
    ├─ 一键清空所有数据
@@ -220,7 +220,7 @@ tools/prepare_release.py
 - `GetFxRate(curCode, periodEnd, useEop)` 签名必须保留。
 - `GetFxRateStatus(curCode, periodEnd, useEop, outRate)` 签名必须保留。
 - `GetFxFromSheet(currencyCode, periodEnd, rateKind)` UDF 签名必须保留。
-- `EdgarHttpGet / XueqiuHttpGet / StockAnalysisHttpGet` 签名必须保留。
+- `EdgarHttpGet / XueqiuHttpGet / StockAnalysisHttpGet` 签名必须保留。`XueqiuHttpGet(strUrl, strCookie)` 自 Phase 5a 起内部委托 `FetchViaPowerShell(strUrl, True)` 匿名 warmup,`strCookie` 参数保留兼容但不再使用。
 - `RunCachedHttpGet` 的遥测语义必须保留。
 - `THttpResult` 字段语义必须保留。
 - `BuildCrossMarketIndicatorSheet` 仍只生成 `跨市场_指标表`。
@@ -233,6 +233,8 @@ tools/prepare_release.py
 - `汇率` sheet 10 列结构不能改。
 - 分市场 20 张正式表由抓数写入,显隐按钮只控制正式表。
 - 诊断 sheet 默认隐藏,全局显隐按钮不展开诊断。
+- `XueqiuHttpGet` 已委托给 `FetchViaPowerShell` 匿名 warmup;不要恢复 E5 cookie 依赖,不要在 HK/US fetcher 里恢复 `If Len(strCookie)=0 Then Err.Raise` 早退。
+- 样本池 Row 5 留空 (原"雪球 Cookie"行已弃用,Phase 5a),A5/E5 不放任何内容。
 
 ### 5.3 数据准确性
 
@@ -305,8 +307,8 @@ FinPrism/
 |---|---|---|---|
 | A 股财报 | 新浪财经公开页面 | `HttpGet` | 不需要 |
 | 美股 EDGAR | SEC companyfacts JSON | `EdgarHttpGet` / `CachedEdgarHttpGet` | 不需要 |
-| 美股 fallback | 雪球 / stockanalysis | `CachedXueqiuHttpGet` / stockanalysis wrapper | 雪球需要 |
-| 港股财报 | 雪球 HK API | `CachedXueqiuHttpGet` | 需要 |
+| 美股 fallback | 雪球 / stockanalysis | `CachedXueqiuHttpGet` / stockanalysis wrapper | 不需要 (Phase 5a 匿名 warmup) |
+| 港股财报 | 雪球 HK API | `CachedXueqiuHttpGet` | 不需要 (Phase 5a 匿名 warmup) |
 | 韩股财报 | stockanalysis.com KRX 页面 | `StockAnalysisHttpGet` wrapper | 不需要 |
 | 台股财报 | FinMind public API | `RunCachedHttpGet` source=`FINMIND` | 不需要 |
 | 汇率 | 雪球 K 线 | `模块_抓汇率.EnsureFxRateCached` | 不需要 |

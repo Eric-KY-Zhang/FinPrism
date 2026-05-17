@@ -26,6 +26,27 @@ temp_archive.zip
 samples/regression_phase4f_*.json
 # Phase 4g stockanalysis HTML 调研样本 (按需本地留存)
 samples/stockanalysis_*.html
+# Sina HTML 调研 dump (按需本地留存, 不入库)
+samples/AAPL_sina_us*.html
+samples/POM_sina_bs.html
+samples/aoji_probe_A_*_sina_balance.html
+
+# 雪球 / FinMind live HTTP dump (VBA DumpXueqiu* / DumpHK* / FinMind 抓数随手产物)
+# 这些是临时字段映射调试用, 每次抓数都会被覆盖, 不应入库
+# 保留作为 fixture 的有: 02519 (Aoji 回归), 00700 (Tencent 探针), 09988 (Alibaba),
+# 09927 (Seres), 005930 (Samsung KR), 013890(KOSDAQ 韩股探针)
+samples/xueqiu_BABA_*.json
+samples/xueqiu_JD_*.json
+samples/xueqiu_HTT_*.json
+samples/xueqiu_POM_*.json
+samples/xueqiu_HK_00388_*.json
+samples/xueqiu_HK_00939_*.json
+samples/xueqiu_HK_00941_*.json
+samples/xueqiu_HK_01024_*.json
+samples/xueqiu_HK_03690_*.json
+samples/xueqiu_KR_*.json
+samples/finmind_TW_*.json
+samples/finmind_tw_*.json
 
 # ============================================================
 # Python 运行产物

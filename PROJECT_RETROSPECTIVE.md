@@ -1,5 +1,7 @@
 # 项目复盘:上市公司财务数据查询 v1.0
 
+> **本文是 v1.0(2026-05-05)4 天 vibe coding 的复盘快照。后续 v1.1(台股接入)与 Phase 5a(雪球 cookie 自动化)的复盘见文末 §postscript。**
+
 > **作者**: Eric Zhang(214978902@qq.com)
 > **日期**: 2026-05-02 ~ 2026-05-05(4 天)
 > **AI 协作**: Claude Code(planner/reviewer)+ Codex(generator)+ GPT 5.5 Pro(static auditor)
@@ -10,10 +12,10 @@
 
 ## 1. 项目目标
 
-构建一个 Excel + VBA 桌面工具,让财务/审计专业人士在 1-3 分钟内完成 **A 股 / 美股 / 港股 / 韩股 4 市场上市公司同期可比财报抓取 + 跨市场对标**,替代手工复制粘贴 + 工作日多次切换数据源的工作流。
+构建一个 Excel + VBA 桌面工具,让财务/审计专业人士在 1-3 分钟内完成 **A 股 / 美股 / 港股 / 韩股 4 市场上市公司同期可比财报抓取 + 跨市场对标**,替代手工复制粘贴 + 工作日多次切换数据源的工作流。[v1.1 起 5 市场,加台股]
 
 **核心交付**:
-- 4 市场抓数(新浪 + EDGAR + 雪球 + stockanalysis 混合数据源)
+- 4 市场抓数(新浪 + EDGAR + 雪球 + stockanalysis 混合数据源)[v1.1 起 5 市场,新增 FinMind 台股]
 - 18 项标准指标统一口径
 - 跨市场指标合表(公式 cell-ref 实时联动)
 - B6 toggle:原币 ↔ 统一 RMB 实时切换(汇率 UDF 实时刷新)
@@ -274,7 +276,7 @@ Day 4:  优化(GPT static audit 给 backlog → reviewer 选 ROI 高的做)+ rel
 
 | 维度 | 评估 |
 |---|---|
-| 范围扩张 | 单市场 → 4 市场 + 跨市场合表 + 优化 4 sprints |
+| 范围扩张 | 单市场 → 4 市场 + 跨市场合表 + 优化 4 sprints [v1.1 起扩展到 5 市场,加台股] |
 | 时间 | 4 天 vibe coding |
 | 代码增量 | ~10K VBA + ~2.5K Python + ~5K 文档 |
 | 测试覆盖 | 7 张 frozen 回归 + 8 离线 fixture |
@@ -283,11 +285,25 @@ Day 4:  优化(GPT static audit 给 backlog → reviewer 选 ROI 高的做)+ rel
 | 用户体验 | B6 实时 toggle 0.13s + cache 4x 提速 + 一键 X 股 自动展开 |
 | 可维护性 | ARCHITECTURE.md + STATUS.md + PHASE_*.md plans 完整追溯 |
 
-**项目正式发布 v1.0**(release: `release/上市公司财务数据查询v1.0_release.xlsm`,source: `release/上市公司财务数据查询v1.0_source.xlsm`)。
+**项目正式发布 v1.0**(release: `release/上市公司财务数据查询v1.0_release.xlsm`,source: `release/上市公司财务数据查询v1.0_source.xlsm`)。[v1.1 起 5 市场,加台股]
 
 后续维护:
 - 实际使用反馈触发 patch sprint
 - 数据源页面变化时,跑 `tools/run_offline_tests.py` 第一时间发现
-- 雪球 cookie 失效时,用户主动更新 B5,fallback 路径自动接管
+- 雪球 cookie 失效时,用户主动更新 B5,fallback 路径自动接管 [Phase 5a 起 E5 弃用,匿名 warmup 自动获取 session]
 
 — Eric Zhang(214978902@qq.com),2026-05-05
+
+---
+
+## Postscript: v1.1 + Phase 5a(2026-05-17)
+
+回头看两轮增量,最值得记的几件事:
+
+**台股接入(v1.1)**: 加 1 个市场看起来轻,实际踩了 DIO 计算的坑 — FinMind 的 Income 接口返回的是单季金额,我们一开始当 YTD 累计用,导致存货周转天数偏离合理区间。教训:**数据源约定不能凭直觉,新接源时必须显式验证"单季 vs YTD vs 期末点位"三类口径**,最好写到字段映射注释里。FinMind 字段映射沉淀在 `模块_抓台股财报.FinMindFieldMapForKindTW`,离线 fixture `Test_Offline_TW_FinMind_TSMC` 兜底回归。
+
+**Phase 5a(雪球 cookie 自动化)**: 把汇率模块里已经验证过的 `FetchViaPowerShell` 匿名 warmup(`/hq` 路径)复用到全部雪球路径,样本池 E5 cookie 字段正式弃用并整行从布局里删了。用户不再需要手工抓 cookie,token 过期风险大幅降低,残留风险变成"匿名 warmup 被限流"(已降级为中风险)。
+
+**踩坑(永远记住)**: 用 `openpyxl(keep_vba=True)` 改 .xlsm 会保留 VBA 代码但**清掉所有 worksheet Shape / OnAction 绑定**,15 个按钮一次性失效,最后用 Excel COM 通过 `tools/install_modules.py` 重建。**永远不要用 openpyxl 改 .xlsm**,只用 Excel COM。
+
+**协作模式**: 这两轮延续 v1.0 的 Triangle 模式(Codex + Claude 多 agent 并行),但更主动地拆审计 / 写作 / 验证三类角色并行跑,Generator(Codex)的边界更清晰,Reviewer 不替它写代码,只验。— Eric Zhang,2026-05-17

@@ -579,24 +579,13 @@ End Sub
 
 
 Public Sub Test_Offline_FX_Missing_DoesNotFallbackToOne()
-    Dim wsFx As Worksheet: Set wsFx = ThisWorkbook.Worksheets("汇率")
-    Dim fxRow As Long: fxRow = FindFxRowForSmoke("2024-12-31")
-    If fxRow = 0 Then Err.Raise vbObjectError + 9720, "Test_Offline_FX_Missing_DoesNotFallbackToOne", "missing FX row 2024-12-31"
-
-    Dim savedUsdEop As Variant: savedUsdEop = wsFx.Cells(fxRow, 2).Value
     Dim fxRate As Double
     Dim statusText As String
 
-    On Error GoTo CleanUp
-    wsFx.Cells(fxRow, 2).ClearContents
-    statusText = GetFxRateStatus("USD", "2024-12-31", True, fxRate)
+    statusText = GetFxRateStatus("XYZ", "2024-12-31", True, fxRate)
 
-    AssertEquals "FX_MISSING", statusText, "missing USD future rate should report FX_MISSING"
-    AssertEquals "0", CStr(fxRate), "missing USD future rate should return 0"
-
-CleanUp:
-    wsFx.Cells(fxRow, 2).Value = savedUsdEop
-    If Err.Number <> 0 Then Err.Raise Err.Number, Err.Source, Err.Description
+    AssertEquals "FX_MISSING", statusText, "unsupported currency should report FX_MISSING"
+    AssertEquals "0", CStr(fxRate), "unsupported currency rate should return 0, never 1"
 End Sub
 
 

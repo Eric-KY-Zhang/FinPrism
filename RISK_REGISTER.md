@@ -1,15 +1,16 @@
-# 风险登记表 — 上市公司财务数据查询 v1.0
+# 风险登记表 — 上市公司财务数据查询 v1.1 + Phase 5a
 
 > **作者**: Eric Zhang(214978902@qq.com)
-> **更新日期**: 2026-05-05
+> **更新日期**: 2026-05-17
 > **使用说明**: 部署 / 维护 / 用户反馈触发的风险持续登记。**等级**: 高(影响数据准确性 / 用户无法用)/ 中(影响体验 / 偶发失败)/ 低(corner case / 长期债)
 
 ## 数据源 / 抓数风险
 
 | 风险 | 等级 | 影响 | 当前控制 | 后续动作 |
 |---|---|---|---|---|
-| 雪球 token 失效 | 高 | A 股(暂未用)/ 港股 / 美股中概 fallback 抓取失败 | 诊断行 `cookie_expired` 提示 + B5/E5 cell 提示 + Phase 4l retry/backoff 重试 | 改为外置凭证(env var / .secrets.json),Phase 4o+ 候选 |
+| 雪球匿名 warmup 被限流 / IP 封禁 | 中 | 港股 / 美股中概 fallback 抓取失败(Phase 5a 起 token 过期风险已大幅降低,匿名 warmup 自动获取 session)| `HttpGetWithRetry` 重试 + cache TTL + 用户可临时回填 E5 cookie(`ReadXueqiuCookie` 保留向后兼容)| 观察诊断行 `RetryCount`,如稳定 > 0 考虑降低匿名 warmup 频率或加 UA 轮换 |
 | 数据源页面 / API 结构变化 | 高 | 字段抓取错误,跨市场指标表显示空 / #N/A | Phase 4d/4h 各市场字段映射 + 诊断 sheet 命中字段记录 + Phase 4m 8 张离线 fixture 测试覆盖解析 | 增加 fixture 真实样本(每季度刷新一次)+ 数据源监控脚本(每周跑一次抓样对比) |
+| TW FinMind API 接口或字段变化 | 中 | 台股财报抓取失败 / DIO 等指标错算 | 离线 fixture `Test_Offline_TW_FinMind_TSMC` + 诊断行 OK_FINMIND / MISSING + 字段映射可在 `模块_抓台股财报.FinMindFieldMapForKindTW` 内调整 | 季度刷新 fixture;监控 FinMind 公告区是否有 API 变更 |
 | 汇率缺失(用户没跑过 EnsureFxRateCached)| 高 | RMB 报表错误(韩股可能差 ~200x) | Phase 4k 修:`GetFxRateStatus` 返回 `FX_MISSING` → 写空值 + 诊断行 `FX_MISSING` | **禁止 fallback=1**(已实施);考虑加 一键全抓 前 pre-flight 检查所有需要的汇率是否在 sheet |
 | stockanalysis 中概美股 fallback 站点反爬 | 中 | BABA/JD/PDD 在雪球 cookie 失效 + 站点变化时全部失败 | Phase 4h Phase 4l retry/backoff;BABA/JD/PDD 白名单卡死,其他 ticker 不尝试 | Phase 4o+:扩展白名单到 BIDU/TCOM/NIO,基于实际使用统计 |
 | SEC EDGAR Fair Access 触发(>10 req/sec)| 中 | EDGAR 抓数 429 / IP ban | Phase 4l SEC 独立限流 ≥110ms 间隔(实测 469ms);retry/backoff 接 429/5xx | 监控诊断 sheet 的 RetryCount 列,如果稳定 > 0 说明 SEC 端紧 |
@@ -24,6 +25,8 @@
 | 宏安全限制(Excel 默认 block 互联网下载的宏)| 中 | 用户无法运行 | 发布说明:第一次打开点"启用宏";README 加 trust 设置说明 | 长期:数字签名(需要 code signing 证书)/ 受信任位置 |
 | 用户 Excel 版本 < 2016 | 中 | UDF / Shape API / outline grouping 可能失效 | 不主动支持,文档声明最低 Excel 2016 | 加版本检测 startup hook,< 2016 弹错误 |
 | Windows PowerShell ExecutionPolicy 严格 | 中 | 汇率抓取 PowerShell shell-out 失败 | Phase 4f shell-out 用 `-ExecutionPolicy Bypass` | 企业部署改 WinHttp / XMLHTTP 直接抓数(P0-04 defer)|
+| PowerShell / .NET 环境异常(ExecutionPolicy / HttpClient 缺失)| 低-中 | Phase 5a 起所有雪球路径依赖 PS HttpClient,环境异常时全市场 fallback 失败 | `FetchViaPowerShell` 启动 `-ExecutionPolicy Bypass`;失败时 `XueqiuHttpGet` 抛错并写诊断;手动回退方案:用户填 E5 cookie 走老 WinHttp 路径(需 revert 模块_工具函数.bas XueqiuHttpGet 函数体)| 加 startup probe:`tools/probe_ps_httpclient.py` 检测 PowerShell + `System.Net.Http` 可用性 |
+| openpyxl 误用(改 .xlsm 时会清掉按钮)| 中(踩过坑)| `keep_vba=True` 保留 VBA 代码但会清掉所有 worksheet Shape / OnAction 绑定,导致 15 个按钮全部失效 | 禁用 openpyxl 改 .xlsm;用 Excel COM(`tools/install_modules.py`)重建按钮;加 `tools/probe_button_bindings.py` 做按钮绑定 sanity check | 在 CONTRIBUTING / ARCHITECTURE 中明确标注"never openpyxl on .xlsm" |
 | 个人 cookie 通过 xlsm 分享泄露 | 高 | 雪球账号被滥用 | Phase 4l `CleanReleaseWorkbook` 宏(用户分享前主动调)+ release 版默认空 cookie | 长期:外置 secrets 管理(`.secrets.json` / env var)|
 | 用户误操作清空样本池数据 | 低 | 自己输入的公司列表丢失 | 数据区 R14+ 不被任何脚本主动清空(Phase 4j 严禁项)| 长期:加 backup 宏(每次 一键全抓 前自动备份样本池到 archive)|
 
@@ -50,8 +53,8 @@
 
 ## 风险等级总览
 
-- **高风险 4 项**:雪球 token 失效 / 数据源结构变化 / 汇率缺失 / cookie 泄露 — 都已有控制 + 后续动作
-- **中风险 9 项**:多数有缓解,部分待 Phase 4o+ 执行
+- **高风险 3 项**:数据源结构变化 / 汇率缺失 / cookie 泄露 — 都已有控制 + 后续动作(原"雪球 token 失效"Phase 5a 起降为中)
+- **中风险 ~12 项**:多数有缓解,部分待 Phase 5+ 执行(新增 TW FinMind / 雪球匿名 warmup 限流 / openpyxl 误用 / PS 环境异常)
 - **低风险 7 项**:技术债 / corner case,不影响核心功能
 
 ## 监控建议
@@ -63,11 +66,11 @@ py tools/run_offline_tests.py                # 验证字段映射稳定
 ```
 
 每月跑一次:
-- 真实抓数 4 公司样本(300866 / AAPL / 00700 / 005930),目视检查跨市场指标表数值合理
+- 真实抓数 5 公司样本(300866 / AAPL / 00700 / 005930 / 2330(台积电)),目视检查跨市场指标表数值合理
 - 检查诊断 sheet `RetryCount` / `FX_MISSING` / `CacheStatus` 列异常分布
 
 每季度:
 - 刷新 fixture(`tests/fixtures/sec_aapl_companyfacts.json` 等)
 - 验证字段映射依然命中
 
-— Eric Zhang(214978902@qq.com),2026-05-05
+— Eric Zhang(214978902@qq.com),2026-05-17(v1.1 + Phase 5a 更新)
