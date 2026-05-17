@@ -5,6 +5,8 @@ import re
 
 import win32com.client as win32
 
+from run_offline_tests import ensure_fixtures
+
 
 ROOT = Path(__file__).resolve().parents[1]
 BOOK = ROOT / "上市公司财务数据查询.xlsm"
@@ -16,7 +18,13 @@ MODULE_UTIL = ROOT / "modules" / "模块_工具函数.bas"
 EXPECTED_FIXTURES = {
     "sec_aapl_companyfacts.json",
     "xueqiu_hk_00700_balance.json",
+    "xueqiu_hk_02519_balance.json",
+    "xueqiu_hk_02519_income.json",
+    "xueqiu_hk_02519_cash_flow.json",
     "stockanalysis_kr_005930_income.html",
+    "finmind_tw_2330_income.json",
+    "finmind_tw_2330_balance.json",
+    "finmind_tw_2330_cash_flow.json",
     "fx_usdcny_kline.json",
     "http_429_response.json",
     "malformed_xueqiu.txt",
@@ -26,7 +34,9 @@ EXPECTED_FIXTURES = {
 EXPECTED_MACROS = {
     "Test_Offline_US_Edgar_AAPL",
     "Test_Offline_HK_Xueqiu_Tencent",
+    "Test_Offline_HK_Aoji_FieldSemantics",
     "Test_Offline_KR_StockAnalysis_Samsung",
+    "Test_Offline_TW_FinMind_TSMC",
     "Test_Offline_FX_Missing_DoesNotFallbackToOne",
     "Test_Offline_Diagnostic_Score_NotDate",
     "Test_Offline_Cache_HitMissExpired",
@@ -48,6 +58,7 @@ def main() -> int:
     failures: list[str] = []
 
     log("\n[1] offline fixture files")
+    ensure_fixtures()
     present = {p.name for p in FIXTURE_DIR.iterdir()} if FIXTURE_DIR.exists() else set()
     missing = sorted(EXPECTED_FIXTURES - present)
     log(f"present fixtures={sorted(EXPECTED_FIXTURES & present)}")

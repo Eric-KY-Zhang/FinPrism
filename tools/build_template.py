@@ -1,7 +1,7 @@
 """
 上市公司财务数据查询 — 工作簿模板生成器
 
-生成空的 xlsm 模板,含使用说明、样本池、A股/美股/港股/韩股 16 张正式表的结构 + 列宽 + 表头容器 + 冻结窗格。
+生成空的 xlsm 模板,含样本池、A股/美股/港股/韩股/台股 20 张正式表的结构 + 列宽 + 表头容器 + 冻结窗格。
 不含任何 VBA 代码 — 后续由 install_modules.py 注入 modules/*.bas。
 
 用法:
@@ -17,7 +17,6 @@
     并注入 VBA 模块。
 """
 
-from datetime import datetime
 from pathlib import Path
 
 from openpyxl import Workbook
@@ -44,75 +43,13 @@ CENTER = Alignment(horizontal="center", vertical="center", wrap_text=True)
 LEFT = Alignment(horizontal="left", vertical="center", wrap_text=True)
 
 
-def build_intro(ws):
-    ws.column_dimensions["A"].width = 100
-    ws["A1"] = "上市公司财务数据查询"
-    ws["A1"].font = Font(name="微软雅黑", size=16, bold=True)
-
-    lines = [
-        "",
-        "【用途】把上市公司财务数据抓成同业对标宽表,方便横向比较。",
-        "【当前支持】A股、美股、港股、韩股。",
-        "【后续规划】更多市场。",
-        "【作者】Eric Zhang",
-        "【联系邮箱】214978902@qq.com",
-        "",
-        "【使用步骤】",
-        "1. 在『样本池』Sheet 第 14 行起按市场录入公司:",
-        "     A:B=A股, D:E=美股, G:H=港股, J:K=韩股; 每个市场只填代码和简称。",
-        "2. A2 填年份 (如 2025), 留空=取最新可用期间。",
-        "3. A4 选择季度: 全部 / Q1 / Q2 / Q3 / Q4。",
-        "4. B5 可填写雪球 xq_a_token cookie; POM、HTT 等 EDGAR 不完整的中概/20-F 公司会自动走雪球 fallback, 港股也使用该 cookie。",
-        "5. 点样本池顶部按钮抓数:",
-        "     【一键 A股 / 一键 美股 / 一键 港股 / 一键 韩股】— 只更新对应市场 4 张表",
-        "     【一键全抓 4 市场】— 顺序更新 A股、美股、港股、韩股 16 张表",
-        "     16 个单表按钮保留在样本池下方辅助区,用于单独排查。",
-        "",
-        "【宽表格式】",
-        "  R1: 公司名(代码), 跨该公司所有报告期合并",
-        "  R2: 报告期, 降序排列",
-        "  A/B列: 大类或指标类型、指标名称; 指标表额外有 C列英文指标名",
-        "  A股: 报告期跨公司取并集对齐; 美股/港股/韩股: 每家公司只展开自己有数据的报告期",
-        "  港股: 单位为百万(各家公司报告币种, 见 港股_抓取诊断 Unit 列); 默认原币输出",
-        "  韩股: 单位为十亿韩元(KRW billions), 数据源表格为百万韩元, 写表时除以 1,000",
-        "",
-        "【数据源】",
-        "  A股: 新浪财经",
-        "  美股: SEC EDGAR companyfacts; 中概/20-F fallback 到雪球",
-        "  港股: 雪球 HK API",
-        "  韩股: stockanalysis.com KRX 财报 HTML 表格",
-        "",
-        "【限制】",
-        "  - 雪球 cookie 过期时需重新复制 xq_a_token 到 B5",
-        "  - 诊断 sheet 中同一 (公司, 指标) 先出现 MISSING_NON_USD、随后出现 OK_XUEQIU 属预期行为:表示 ifrs-full 有字段但单位不是 USD,系统改走雪球兜底",
-        "  - 样本池已按市场分栏,韩股代码请填在韩股区,不再需要市场列",
-        "",
-        "【汇率与币种】",
-        "  新增『汇率』sheet 缓存 USDCNY / HKDCNY / KRWCNY 期末与期间平均汇率。",
-        "  数据源: 雪球 K 线 USDCNY.FX / HKDCNY.FX / KRWCNY.FX, 期间平均 = 区间内日 close 算术平均。",
-        "  1. 在样本池 A 列填代码、B 列填简称 (各市场分栏)。",
-        "  2. B5 填雪球 xq_a_token cookie (港股抓数 / 美股雪球 fallback 使用; 汇率缓存可自动 warmup)。",
-        "  3. B6 选 '原币' (默认) 或 '统一RMB' (4 市场全部按当期汇率换算成 RMB 显示)。",
-        "  4. B8 默认 '关';仅当 EDGAR + 雪球均失败时,可手动设 '开' 启用 BABA/JD/PDD stockanalysis 备用路径。",
-        "  5. 点 '一键全抓 4 市场', 等候 ~3 分钟。",
-        "  6. 切换 B6 后已写表数值会立即按公式切换显示,无需重新抓数。",
-        "  汇率值在『汇率』sheet 缓存;HTTP 响应缓存写入 .cache/ 24 小时;均可本地清理或手动 override。",
-        "",
-        "【来源说明】基于林铖 V2.2 重写并扩展。",
-    ]
-    for i, text in enumerate(lines, start=2):
-        cell = ws.cell(row=i, column=1, value=text)
-        cell.alignment = LEFT
-        cell.font = Font(name="微软雅黑", size=11)
-
-
 def build_sample_pool(ws):
     """
     样本池布局 (Phase 4e):
       Row 1-5: 全局配置区
-      Row 7: 4 市场标题
-      Row 8: 4 市场一键按钮位
-      Row 9: 4 市场 tabs 显隐按钮位
+      Row 7: 5 市场标题
+      Row 8: 5 市场一键按钮位
+      Row 9: 5 市场 tabs 显隐按钮位
       Row 10: 各市场列头
       Row 11+: 公司数据
     """
@@ -209,7 +146,7 @@ def build_sample_pool(ws):
         ("E8:F8", "一键 美股", "FFC00000", WHITE, 11),
         ("I8:J8", "一键 港股", "FF548235", WHITE, 11),
         ("M8:N8", "一键 韩股", "FF7030A0", WHITE, 11),
-        ("Q1:Q3", "一键全抓 4 市场", "FF4472C4", WHITE, 11),
+        ("Q1:Q3", "一键全抓 5 市场", "FF4472C4", WHITE, 11),
         ("Q5:Q7", "合并跨市场指标表", "FF4472C4", WHITE, 11),
         ("Q14:Q14", "清空缓存", SECONDARY_BLUE, SECONDARY_FG, 9),
         ("S1:S3", "合并 4 张跨市场表", "FF4472C4", WHITE, 11),
@@ -276,7 +213,7 @@ def build_wide_table(ws):
       冻结 B3 (前 2 行表头 + 前 2 列锚定)
     """
     fill = PatternFill("solid", fgColor=DARK_BLUE)
-    is_indicator = ws.title in ("A股_指标表", "美股_指标表", "港股_指标表", "韩股_指标表")
+    is_indicator = ws.title in ("A股_指标表", "美股_指标表", "港股_指标表", "韩股_指标表", "台股_指标表")
 
     ws["A1"] = "指标类型" if is_indicator else "大类"
     ws["A1"].font = HEADER_FONT
@@ -428,19 +365,20 @@ def build_diagnostic_sheet(ws, market_label="美股"):
 def build_fx_sheet(ws):
     """
     Phase 4f Step 2: 汇率 sheet 模板
-      Row 1: 8 列表头(深蓝白字)
+      Row 1: 10 列表头(深蓝白字)
       Row 2+: 由 VBA 模块_抓汇率 自动填充, 用户也可手填 override
-      列宽: A=14 报告期 / B-G=14 数值 / H=40 备注
+      列宽: A=14 报告期 / B-I=14 数值 / J=40 备注
       冻结 A2; A 列文本格式 (防 yyyy-mm-dd 被 Excel 数字化)
     """
     ws.column_dimensions["A"].width = 14
-    for letter in ["B", "C", "D", "E", "F", "G"]:
+    for letter in ["B", "C", "D", "E", "F", "G", "H", "I"]:
         ws.column_dimensions[letter].width = 14
-    ws.column_dimensions["H"].width = 40
+    ws.column_dimensions["J"].width = 40
 
     headers = ["报告期", "USDCNY期末", "USDCNY期均",
                "HKDCNY期末", "HKDCNY期均",
-               "KRWCNY期末", "KRWCNY期均", "备注/override"]
+               "KRWCNY期末", "KRWCNY期均",
+               "TWDCNY期末", "TWDCNY期均", "备注/override"]
     fill = PatternFill("solid", fgColor=DARK_BLUE)
     for j, txt in enumerate(headers, start=1):
         col = get_column_letter(j)
@@ -464,11 +402,7 @@ def main():
     # Drop the default sheet
     wb.remove(wb.active)
 
-    # 1. 使用说明
-    ws_intro = wb.create_sheet("使用说明")
-    build_intro(ws_intro)
-
-    # 2. 样本池
+    # 1. 样本池
     ws_pool = wb.create_sheet("样本池")
     build_sample_pool(ws_pool)
 
@@ -501,6 +435,14 @@ def main():
 
     ws_diag_kr = wb.create_sheet("韩股_抓取诊断")
     build_diagnostic_sheet(ws_diag_kr, "韩股")
+
+    # ---- 台股 4 张表 + 台股_抓取诊断 sheet ----
+    for name in ["台股_资产负债表", "台股_利润表", "台股_现金流量表", "台股_指标表"]:
+        ws_tw = wb.create_sheet(name)
+        build_wide_table(ws_tw)
+
+    ws_diag_tw = wb.create_sheet("台股_抓取诊断")
+    build_diagnostic_sheet(ws_diag_tw, "台股")
 
     # ---- Phase 4h Step 2: 跨市场 BS/IS/CF 合并视图 ----
     for label in ("资产负债表", "利润表", "现金流量表"):

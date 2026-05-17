@@ -966,11 +966,10 @@ Private Sub FetchUSFromXueqiu(ByVal strTicker As String, _
     On Error GoTo XqErr
 
     stage = "ReadCookie"
+    ' Phase 5a: 取 cookie 仅为兼容下游 CachedXueqiuHttpGet 签名;
+    ' 实际传输已改走 FetchViaPowerShell 的 /hq 匿名 warmup,
+    ' E5 留空不再阻断雪球 US fallback。
     Dim strCookie As String: strCookie = ReadXueqiuCookie()
-    If Len(strCookie) = 0 Then
-        Err.Raise vbObjectError + 542, "FetchUSFromXueqiu", _
-            "雪球 fallback 需要 cookie. 请在 样本池!B5 填入 xq_a_token=... (浏览器登录 xueqiu.com 后 F12 拷)"
-    End If
 
     stage = "BuildUrl"
     Dim strType As String: strType = XueqiuTypeForQuarter(strQuarter)

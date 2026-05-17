@@ -9,7 +9,7 @@ Option Explicit
 '
 '  约定:
 '    - 港股只走雪球, 不走 EDGAR / ifrs-full / fuzzy 推荐。
-'    - 金额写入值 = 雪球原值 / 1,000,000。
+'    - 金额写入值 = 雪球原值 / 1,000,000；每股指标保持原值。
 '    - 币种不写死, 诊断 Unit 列使用 data.currency; 正式表 A1 comment 说明看诊断。
 ' =================================================================
 
@@ -229,11 +229,10 @@ Private Sub FetchHKFromXueqiu(ByVal strTicker As String, _
     On Error GoTo XqErr
 
     stage = "ReadCookie"
+    ' Phase 5a: 取 cookie 仅为兼容下游 CachedXueqiuHttpGet 签名;
+    ' 实际传输已改走 FetchViaPowerShell 的 /hq 匿名 warmup,
+    ' E5 留空不再阻断 HK 抓数。
     Dim strCookie As String: strCookie = ReadXueqiuCookie()
-    If Len(strCookie) = 0 Then
-        Err.Raise vbObjectError + 642, "FetchHKFromXueqiu", _
-            "雪球 HK 抓数需要 cookie. 请在 样本池!B5 填入 xq_a_token"
-    End If
 
     stage = "BuildUrl"
     Dim strEndpoint As String: strEndpoint = XueqiuHKEndpointForKind(strKind)
@@ -354,7 +353,7 @@ Private Sub FetchHKFromXueqiu(ByVal strTicker As String, _
                 candIdx = candIdx + 1
                 val = XueqiuValueHK(record, Trim$(CStr(cand)))
                 If Not IsEmpty(val) And Not IsNull(val) Then
-                    If Not HKTryScaledValue(val, valM) Then GoTo NextCandidate
+                    If Not HKTryScaledValue(val, valM, strLabel) Then GoTo NextCandidate
 
                     If Not dictPeriodSet.Exists(periodEnd) Then dictPeriodSet.Add periodEnd, True
                     If Not dictIndicatorSet.Exists(strLabel) Then
@@ -415,12 +414,12 @@ Private Function XueqiuFieldMapForKindHK(ByVal strKind As String) As Object
     Select Case strKind
         Case "BalanceSheet"
             mapXq.Add "Cash & equivalents", "cceq"
-            mapXq.Add "Accounts receivable, net", "trx"
-            mapXq.Add "Inventory", "inv"
+            mapXq.Add "Accounts receivable, net", "trrb,trx"
+            mapXq.Add "Inventory", "iv"
             mapXq.Add "Total current assets", "ca"
             mapXq.Add "Accounts payable", "trpy"
             mapXq.Add "Property, plant & equipment, net", "fxda"
-            mapXq.Add "Investments", "iv,fina"
+            mapXq.Add "Investments", "fina,inv"
             mapXq.Add "Total non-current assets", "tnca"
             mapXq.Add "Total assets", "ta"
             mapXq.Add "Short-term debt", "stdt"
@@ -430,12 +429,12 @@ Private Function XueqiuFieldMapForKindHK(ByVal strKind As String) As Object
             mapXq.Add "Total liabilities", "tlia"
             mapXq.Add "Minority interests", "miint"
             mapXq.Add "Total equity", "teqy"
-            mapXq.Add "Total stockholders' equity", "teqy"
+            mapXq.Add "Total stockholders' equity", "shhfd,teqy"
             mapXq.Add "Total liabilities & equity", "ta"
 
         Case "Income"
             mapXq.Add "Revenue", "tto"
-            mapXq.Add "Cost of goods & services sold", "fcgcost,slgcost"
+            mapXq.Add "Cost of goods & services sold", "slgcost,fcgcost"
             mapXq.Add "Gross profit", "gp"
             mapXq.Add "R&D expense", "rshdevexp"
             mapXq.Add "Selling expense", "slgdstexp"
@@ -452,7 +451,7 @@ Private Function XueqiuFieldMapForKindHK(ByVal strKind As String) As Object
             mapXq.Add "Cash from operations", "nocf"
             mapXq.Add "Depreciation & amortization", "depaz"
             mapXq.Add "Cash from investing", "ninvcf"
-            mapXq.Add "Capex", "fxdiodtinstr,rpafxdiodtinstr"
+            mapXq.Add "Capex", "adtfxda,fxdiodtinstr,rpafxdiodtinstr"
             mapXq.Add "Cash from financing", "nfcgcf"
             mapXq.Add "Dividends paid", "divp"
             mapXq.Add "Interest paid", "intp"
@@ -603,17 +602,28 @@ CleanExit:
 End Function
 
 
-Private Function HKTryScaledValue(ByVal rawValue As Variant, ByRef scaledValue As Double) As Boolean
+Private Function HKTryScaledValue(ByVal rawValue As Variant, _
+                                  ByRef scaledValue As Double, _
+                                  Optional ByVal strLabel As String = "") As Boolean
     Dim normalized As Variant
     normalized = NormalizeValue(CStr(rawValue))
     If IsEmpty(normalized) Or IsNull(normalized) Then
         HKTryScaledValue = False
     ElseIf IsNumeric(normalized) Then
-        scaledValue = CDbl(normalized) / 1000000#
+        If HKIsPerShareLabel(strLabel) Then
+            scaledValue = CDbl(normalized)
+        Else
+            scaledValue = CDbl(normalized) / 1000000#
+        End If
         HKTryScaledValue = True
     Else
         HKTryScaledValue = False
     End If
+End Function
+
+
+Private Function HKIsPerShareLabel(ByVal strLabel As String) As Boolean
+    HKIsPerShareLabel = (InStr(1, strLabel, "EPS", vbTextCompare) > 0)
 End Function
 
 

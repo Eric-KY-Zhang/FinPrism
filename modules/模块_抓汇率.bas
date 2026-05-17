@@ -6,7 +6,7 @@ Option Explicit
 '  作者: Generator sub-agent (依据 PHASE_4F_STEP2_TASKS.md)
 '
 '  ⚠️ 关键约束 (Step 1 RMB_FX_PROBE.md 实测锁定):
-'    1. FX symbol 必带 .FX: USDCNY.FX / HKDCNY.FX / KRWCNY.FX
+'    1. FX symbol 必带 .FX: USDCNY.FX / HKDCNY.FX / KRWCNY.FX / TWDCNY.FX
 '       (没 .FX 后缀 → HTTP 200 + data 空数组, silent 失败)
 '    2. Accept-Encoding 必须 "gzip, deflate" (NOT identity)
 '       → 不复用 模块_工具函数.bas line 608 XueqiuHttpGet (它用 identity, 200 + 空 body)
@@ -58,7 +58,10 @@ End Function
 '   url: 完整 URL
 '   warmupFirst: True 时 PS 内先 GET https://xueqiu.com/hq 拿 cookie
 '   失败/timeout → 抛异常
-Private Function FetchViaPowerShell(ByVal url As String, ByVal warmupFirst As Boolean) As String
+' Phase 5a: promoted to Public so 模块_工具函数.XueqiuHttpGet can reuse the
+' /hq anonymous-warmup HttpClient session and stop depending on a manual
+' xq_a_token in 样本池!E5. Body is unchanged.
+Public Function FetchViaPowerShell(ByVal url As String, ByVal warmupFirst As Boolean) As String
     WarmupXueqiuSession
 
     Dim sh As Object: Set sh = CreateObject("WScript.Shell")
@@ -163,7 +166,7 @@ End Function
 
 
 ' --------- 拉某币种 K 线, 返回 2D Variant array (i,0)=ts_ms / (i,1)=close ---------
-'   curCode: "USD" / "HKD" / "KRW" (其他报错)
+'   curCode: "USD" / "HKD" / "KRW" / "TWD" (其他报错)
 '   beginCstMs: kline begin 参数 (Currency, ms)
 '   barCount: 拉取条数 (production = 2000 day)
 '   失败/无数据 → ReDim 0 行
@@ -176,6 +179,8 @@ Private Function FetchFxKline(ByVal curCode As String, ByVal beginCstMs As Curre
             fxSymbol = "HKDCNY.FX"
         Case "KRW"
             fxSymbol = "KRWCNY.FX"
+        Case "TWD"
+            fxSymbol = "TWDCNY.FX"
         Case Else
             Err.Raise vbObjectError + 541, "FetchFxKline", _
                 "未知币种: " & curCode
@@ -363,7 +368,7 @@ End Function
 ' --------- 主入口: 确保 (periodEnd, curCode) 的汇率已写入『汇率』sheet ---------
 '   periodEnd: yyyy-mm-dd
 '   curCode  : "RMB"/"CNY" → True (无需写)
-'              "USD"/"HKD"/"KRW" → 查 sheet, 缺则拉 K 线写, 用户手填值不覆盖
+'              "USD"/"HKD"/"KRW"/"TWD" → 查 sheet, 缺则拉 K 线写, 用户手填值不覆盖
 '   返回 True=成功 (sheet 含 valid 期末/期均) / False=失败
 '
 '   用户 override 检测: cell value IsNumeric And > 0 → 视为有效, 不重拉
@@ -373,7 +378,7 @@ Public Function EnsureFxRateCached(ByVal periodEnd As String, ByVal curCode As S
         EnsureFxRateCached = True
         Exit Function
     End If
-    If c <> "USD" And c <> "HKD" And c <> "KRW" Then
+    If c <> "USD" And c <> "HKD" And c <> "KRW" And c <> "TWD" Then
         EnsureFxRateCached = False
         Exit Function
     End If

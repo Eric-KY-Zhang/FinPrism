@@ -426,6 +426,27 @@ Public Function LoadFixture(ByVal fileName As String) As String
 End Function
 
 
+Private Function LoadProjectModuleSource(ByVal fileName As String) As String
+    Dim modulePath As String
+    modulePath = ThisWorkbook.Path & "\modules\" & fileName
+
+    Dim fso As Object: Set fso = CreateObject("Scripting.FileSystemObject")
+    If Not fso.FileExists(modulePath) Then
+        Err.Raise vbObjectError + 9703, "LoadProjectModuleSource", "Module source not found: " & modulePath
+    End If
+
+    Dim stream As Object: Set stream = CreateObject("ADODB.Stream")
+    With stream
+        .Type = 2
+        .Charset = "utf-8"
+        .Open
+        .LoadFromFile modulePath
+        LoadProjectModuleSource = .ReadText(-1)
+        .Close
+    End With
+End Function
+
+
 Public Function RunOfflineTest(ByVal testName As String) As String
     On Error GoTo EH
     Application.Run "模块_测试." & testName
@@ -466,6 +487,43 @@ Public Sub Test_Offline_HK_Xueqiu_Tencent()
 End Sub
 
 
+Public Sub Test_Offline_HK_Aoji_FieldSemantics()
+    Dim incomeBody As String: incomeBody = LoadFixture("xueqiu_hk_02519_income.json")
+    Dim balanceBody As String: balanceBody = LoadFixture("xueqiu_hk_02519_balance.json")
+    Dim cashBody As String: cashBody = LoadFixture("xueqiu_hk_02519_cash_flow.json")
+    Dim hkModule As String: hkModule = LoadProjectModuleSource("模块_抓港股财报.bas")
+    Dim utilModule As String: utilModule = LoadProjectModuleSource("模块_工具函数.bas")
+
+    AssertTrue InStr(1, incomeBody, """slgcost""", vbTextCompare) > 0, "Aoji fixture should include sales cost slgcost"
+    AssertTrue InStr(1, incomeBody, """fcgcost""", vbTextCompare) > 0, "Aoji fixture should include finance cost fcgcost"
+    AssertTrue InStr(1, incomeBody, """beps_aju""", vbTextCompare) > 0, "Aoji fixture should include EPS field"
+    AssertTrue InStr(1, balanceBody, """iv""", vbTextCompare) > 0, "Aoji fixture should include inventory field iv"
+    AssertTrue InStr(1, balanceBody, """inv""", vbTextCompare) > 0, "Aoji fixture should include non-inventory field inv"
+    AssertTrue InStr(1, balanceBody, """trrb""", vbTextCompare) > 0, "Aoji fixture should include trade receivable field trrb"
+    AssertTrue InStr(1, balanceBody, """trx""", vbTextCompare) > 0, "Aoji fixture should include broader receivable field trx"
+    AssertTrue InStr(1, balanceBody, """shhfd""", vbTextCompare) > 0, "Aoji fixture should include shareholder equity field shhfd"
+    AssertTrue InStr(1, cashBody, """adtfxda""", vbTextCompare) > 0, "Aoji fixture should include fixed asset purchase field adtfxda"
+    AssertTrue InStr(1, cashBody, """cceqeyr""", vbTextCompare) > 0, "Aoji fixture should include cash at end field cceqeyr"
+
+    AssertTrue InStr(1, hkModule, "mapXq.Add ""Cost of goods & services sold"", ""slgcost,fcgcost""", vbTextCompare) > 0, _
+               "HK sales cost mapping should prefer slgcost over finance cost"
+    AssertTrue InStr(1, hkModule, "mapXq.Add ""Inventory"", ""iv""", vbTextCompare) > 0, _
+               "HK inventory mapping should use inventory field iv"
+    AssertTrue InStr(1, hkModule, "mapXq.Add ""Accounts receivable, net"", ""trrb,trx""", vbTextCompare) > 0, _
+               "HK receivable mapping should prefer trade receivables"
+    AssertTrue InStr(1, hkModule, "mapXq.Add ""Total stockholders' equity"", ""shhfd,teqy""", vbTextCompare) > 0, _
+               "HK stockholders' equity should prefer shareholder funds"
+    AssertTrue InStr(1, hkModule, "mapXq.Add ""Capex"", ""adtfxda,fxdiodtinstr,rpafxdiodtinstr""", vbTextCompare) > 0, _
+               "HK capex mapping should prefer fixed asset purchase cash flow"
+    AssertTrue InStr(1, hkModule, "HKIsPerShareLabel", vbTextCompare) > 0, _
+               "HK EPS fields should not be scaled as million amounts"
+    AssertTrue InStr(1, utilModule, "AddStandardRow m, ""CASH"", ""港股_现金流量表"", Array(""Cash at end of period"")", vbTextCompare) > 0, _
+               "HK cash ratio should use cash-flow ending cash, not broad balance-sheet bank balances"
+    AssertTrue InStr(1, utilModule, "If CStr(cashMeta(0)) = cfSheet Then cashCol = cfCol", vbTextCompare) > 0, _
+               "standard indicator formulas should use the cash-flow column when CASH maps to cash-flow sheet"
+End Sub
+
+
 Public Sub Test_Offline_KR_StockAnalysis_Samsung()
     Dim body As String: body = LoadFixture("stockanalysis_kr_005930_income.html")
     Dim hasSamsung As Boolean
@@ -483,6 +541,40 @@ Public Sub Test_Offline_KR_StockAnalysis_Samsung()
     AssertTrue InStr(1, body, "revenue", vbTextCompare) > 0, "KR fixture should include revenue"
     AssertTrue hasOperatingIncome, "KR fixture should include operating income"
     AssertTrue hasNetIncome, "KR fixture should include net income"
+End Sub
+
+
+Public Sub Test_Offline_TW_FinMind_TSMC()
+    Dim incomeBody As String: incomeBody = LoadFixture("finmind_tw_2330_income.json")
+    Dim balanceBody As String: balanceBody = LoadFixture("finmind_tw_2330_balance.json")
+    Dim cashBody As String: cashBody = LoadFixture("finmind_tw_2330_cash_flow.json")
+    Dim twModule As String: twModule = LoadProjectModuleSource("模块_抓台股财报.bas")
+    Dim utilModule As String: utilModule = LoadProjectModuleSource("模块_工具函数.bas")
+    Dim fxModule As String: fxModule = LoadProjectModuleSource("模块_抓汇率.bas")
+
+    AssertTrue InStr(1, incomeBody, """Revenue""", vbTextCompare) > 0, "TW fixture should include Revenue"
+    AssertTrue InStr(1, incomeBody, """EPS""", vbTextCompare) > 0, "TW fixture should include EPS"
+    AssertTrue InStr(1, balanceBody, """TotalAssets""", vbTextCompare) > 0, "TW fixture should include TotalAssets"
+    AssertTrue InStr(1, balanceBody, """EquityAttributableToOwnersOfParent""", vbTextCompare) > 0, "TW fixture should include parent equity"
+    AssertTrue InStr(1, cashBody, """Depreciation""", vbTextCompare) > 0, "TW fixture should include Depreciation"
+    AssertTrue InStr(1, cashBody, """AmortizationExpense""", vbTextCompare) > 0, "TW fixture should include AmortizationExpense"
+
+    AssertTrue InStr(1, twModule, "TaiwanStockFinancialStatements", vbTextCompare) > 0, _
+               "TW income source should use FinMind TaiwanStockFinancialStatements"
+    AssertTrue InStr(1, twModule, "TaiwanStockBalanceSheet", vbTextCompare) > 0, _
+               "TW balance source should use FinMind TaiwanStockBalanceSheet"
+    AssertTrue InStr(1, twModule, "TaiwanStockCashFlowsStatement", vbTextCompare) > 0, _
+               "TW cash-flow source should use FinMind TaiwanStockCashFlowsStatement"
+    AssertTrue InStr(1, twModule, "TWTryScaledSum", vbTextCompare) > 0, _
+               "TW D&A should sum depreciation and amortization when both fields exist"
+    AssertTrue InStr(1, twModule, "TWIsPerShareLabel", vbTextCompare) > 0, _
+               "TW EPS fields should not be scaled as million amounts"
+    AssertTrue InStr(1, utilModule, "Case ""TWD""", vbTextCompare) > 0, _
+               "TWD should be supported by FX column mapping"
+    AssertTrue InStr(1, utilModule, "Case ""TW"": MarketIndicatorSheetName = ""台股_指标表""", vbTextCompare) > 0, _
+               "TW indicator sheet should be included in cross-market merge"
+    AssertTrue InStr(1, fxModule, "TWDCNY.FX", vbTextCompare) > 0, _
+               "TWD RMB conversion should fetch TWDCNY.FX"
 End Sub
 
 
@@ -643,3 +735,45 @@ Private Function GetOrClearSmokeSheet(ByVal sheetName As String) As Worksheet
 
     Set GetOrClearSmokeSheet = ws
 End Function
+
+
+' =================================================================
+'  Phase 5a: 雪球匿名 warmup 路径回归 (live HTTP)
+'    需要可访问公网。两个用例都打 https://xueqiu.com/hq 拿 cookie,
+'    再调 stock.xueqiu.com/v5/stock/finance/hk/...,确认无需 E5 token。
+' =================================================================
+Public Sub Test_Phase5a_Xueqiu_AnonWarmup_Smoke()
+    Dim s As String
+    s = XueqiuHttpGet( _
+        "https://stock.xueqiu.com/v5/stock/finance/hk/" & _
+        "balance.json?symbol=00700&type=Q4&is_detail=true&count=5", "")
+    AssertTrue InStr(s, """error_code"":0") > 0, _
+        "Phase5a: HK balance.json should return error_code:0"
+    AssertTrue InStr(s, """list"":[") > 0, _
+        "Phase5a: response should contain list array"
+    Debug.Print "[PASS] Test_Phase5a_Xueqiu_AnonWarmup_Smoke"
+End Sub
+
+
+Public Sub Test_Phase5a_NoCookieCellNeeded()
+    ' 模拟 E5 为空: 临时清空 + 测试 + 恢复
+    Dim wsPool As Worksheet
+    Set wsPool = ThisWorkbook.Sheets("样本池")
+    Dim backupVal As Variant: backupVal = wsPool.Range("E5").Value
+    wsPool.Range("E5").Value = ""
+
+    Dim s As String
+    On Error Resume Next
+    s = XueqiuHttpGet( _
+        "https://stock.xueqiu.com/v5/stock/finance/hk/" & _
+        "income.json?symbol=00700&type=Q4&is_detail=true&count=5", "")
+    Dim errNum As Long: errNum = Err.Number
+    On Error GoTo 0
+
+    wsPool.Range("E5").Value = backupVal  ' 恢复
+
+    AssertEquals 0, errNum, "Phase5a: should not raise when E5 empty"
+    AssertTrue InStr(s, """error_code"":0") > 0, _
+        "Phase5a: should succeed without manual cookie"
+    Debug.Print "[PASS] Test_Phase5a_NoCookieCellNeeded"
+End Sub

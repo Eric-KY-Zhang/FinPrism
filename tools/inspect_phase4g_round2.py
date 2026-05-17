@@ -1,8 +1,8 @@
 """
 Phase 4g Round 2 reviewer probe (Step 3):
-  1) Sample pool: row 9 = hide-tab button row, row 10 = headers, row 11+ = data
-  2) Existing companies preserved at row 11+ (migration worked)
-  3) 5 hide-tab buttons placed: A9/E9/I9/M9/Q8:Q10
+  1) Sample pool: row 9-12 = action button rows, row 13 = headers, row 14+ = data
+  2) Existing companies preserved at row 14+ (migration worked)
+  3) 6 hide-tab buttons placed: 5 market buttons + global button
   4) Toggle macro works: 切换A股tabs hides A股_* sheets, second call unhides
   5) Const POOL_DATA_START_ROW = 11 in source
 """
@@ -11,7 +11,8 @@ import sys
 from pathlib import Path
 import win32com.client as win32
 
-XLSM = Path(r"E:\Claude+CODEX Project\FS Capture\VBA Captor\上市公司财务数据查询.xlsm")
+ROOT = Path(__file__).resolve().parent.parent
+XLSM = ROOT / "上市公司财务数据查询.xlsm"
 
 
 def log(msg):
@@ -40,12 +41,13 @@ def main():
             # 3. Buttons: scan for hide-tab Shapes
             log("\n=== 2) Hide-tab buttons on 样本池 ===")
             expected = {
-                "BtnHideA": "A9:B9",
-                "BtnHideUS": "E9:F9",
-                "BtnHideHK": "I9:J9",
-                "BtnHideKR": "M9:N9",
-                "BtnHideAll": "Q8:Q10",
-                "BtnBuildCrossInd": "Q5:Q7",
+                "BtnHideA": "A11:C12",
+                "BtnHideUS": "D11:F12",
+                "BtnHideHK": "G11:I12",
+                "BtnHideKR": "J11:M12",
+                "BtnHideTW": "N11:P12",
+                "BtnHideAll": "R6:U7",
+                "BtnBuildCrossInd": "R4:U5",
             }
             found_buttons = {}
             for shape in pool.Shapes:
@@ -65,33 +67,35 @@ def main():
             # 4. Toggle test: hide A股, verify, unhide, verify
             log("\n=== 3) Toggle 切换A股tabs behavior ===")
             a_sheets = [s for s in (wb.Sheets(i+1) for i in range(wb.Sheets.Count)) if s.Name.startswith("A股_")]
+            initial_a_visibility = {s.Name: s.Visible for s in a_sheets}
             log(f"  A股_* sheets ({len(a_sheets)}):")
             for s in a_sheets:
                 log(f"    {s.Name}: visible={s.Visible} (-1=visible, 0=hidden)")
 
-            log("  -> calling 模块_总入口.切换A股tabs (1st time, expect hide)")
+            log("  -> calling 模块_总入口.切换A股tabs (1st time, toggles current state)")
             excel.Run("模块_总入口.切换A股tabs")
             for s in a_sheets:
                 log(f"    {s.Name}: visible={s.Visible}")
-            all_hidden = all(s.Visible == 0 for s in a_sheets)
-            log(f"  All A股_* hidden? {all_hidden}")
+            changed_once = any(s.Visible != initial_a_visibility.get(s.Name) for s in a_sheets)
+            log(f"  A股_* visibility changed after 1st call? {changed_once}")
 
-            log("  -> calling 模块_总入口.切换A股tabs (2nd time, expect unhide)")
+            log("  -> calling 模块_总入口.切换A股tabs (2nd time, restores current state)")
             excel.Run("模块_总入口.切换A股tabs")
             for s in a_sheets:
                 log(f"    {s.Name}: visible={s.Visible}")
-            all_visible = all(s.Visible == -1 for s in a_sheets)
-            log(f"  All A股_* visible? {all_visible}")
+            restored = all(s.Visible == initial_a_visibility.get(s.Name) for s in a_sheets)
+            log(f"  A股_* visibility restored after 2nd call? {restored}")
 
             # 5. Global toggle
-            log("\n=== 4) Toggle 切换所有分市场tabs (1 call hides 4 markets, 2nd unhides) ===")
+            log("\n=== 4) Toggle 切换所有分市场tabs (toggles official market sheets + cross indicator) ===")
             all_market_sheets = []
-            for prefix in ("A股_", "美股_", "港股_", "韩股_"):
+            for prefix in ("A股_", "美股_", "港股_", "韩股_", "台股_"):
                 for i in range(wb.Sheets.Count):
                     s = wb.Sheets(i+1)
-                    if s.Name.startswith(prefix):
+                    if s.Name.startswith(prefix) and "抓取诊断" not in s.Name:
                         all_market_sheets.append(s)
-            log(f"  All 4-market sheets: {len(all_market_sheets)} total")
+            all_market_sheets.append(wb.Sheets("跨市场_指标表"))
+            log(f"  Official 5-market sheets + cross indicator: {len(all_market_sheets)} total")
 
             log("  -> 1st call (hide all)")
             excel.Run("模块_总入口.切换所有分市场tabs")
@@ -115,9 +119,9 @@ def main():
             except Exception as e:
                 log(f"  !! source check: {e}")
 
-            # 7. Verify cross-market sheet & 汇率 / 样本池 / 使用说明 NOT in toggle scope
+            # 7. Verify 汇率 / 样本池 NOT in toggle scope
             log("\n=== 6) Shared sheets must NOT be toggled ===")
-            shared = ["样本池", "使用说明", "汇率", "跨市场_指标表"]
+            shared = ["样本池", "汇率"]
             log("  Calling 切换所有分市场tabs once (hide), check shared sheets stay visible:")
             excel.Run("模块_总入口.切换所有分市场tabs")
             for n in shared:

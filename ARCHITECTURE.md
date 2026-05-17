@@ -1,6 +1,6 @@
 # 上市公司财务数据查询 — 架构
 
-> Last updated: 2026-05-05 (Phase 4n)
+> Last updated: 2026-05-17 (v1.1 release prep)
 
 本文档描述 `VBA Captor` 目录下的 Excel/VBA 桌面工具架构。它面向后续维护者和 Codex/Reviewer 交接使用,不替代 `STATUS.md` 的逐 phase 追溯记录。
 
@@ -10,8 +10,8 @@
 
 核心目标:
 
-- 在一个工作簿里维护 A 股、美股、港股、韩股样本池。
-- 一键抓取并写出四市场上市公司的资产负债表、利润表、现金流量表和指标表。
+- 在一个工作簿里维护 A 股、美股、港股、韩股、台股样本池。
+- 一键抓取并写出 5 个市场上市公司的资产负债表、利润表、现金流量表和指标表。
 - 统一展示 18 个标准指标,支持跨市场同业对标。
 - 通过 `原币 / 统一RMB` 切换支持跨市场金额口径比较。
 - 尽量把网络、缓存、汇率、诊断和 QA 都留在本地,不引入服务端依赖。
@@ -60,12 +60,18 @@
 │  ├─ 模块_抓港股利润表
 │  ├─ 模块_抓港股现金流量表
 │  └─ 模块_抓港股指标表
-└─ 韩股
+├─ 韩股
    ├─ 模块_抓韩股财报
    ├─ 模块_抓韩股资产负债表
    ├─ 模块_抓韩股利润表
    ├─ 模块_抓韩股现金流量表
    └─ 模块_抓韩股指标表
+└─ 台股
+   ├─ 模块_抓台股财报
+   ├─ 模块_抓台股资产负债表
+   ├─ 模块_抓台股利润表
+   ├─ 模块_抓台股现金流量表
+   └─ 模块_抓台股指标表
 
 写表和通用服务
 └─ 模块_工具函数
@@ -102,10 +108,9 @@
 
 | Sheet | 用途 | 数据来源 | 可见性 |
 |---|---|---|---|
-| 使用说明 | 用户说明和操作步骤 | `tools/install_modules.py` 写入 | 可见 |
 | 样本池 | 参数、样本公司、按钮区 | 用户录入 + 装表脚本布局 | 可见 |
-| 汇率 | USDCNY/HKDCNY/KRWCNY 期末和期均汇率 | `模块_抓汇率` | 可见 |
-| 跨市场_指标表 | 四市场 18 项标准指标合并视图 | `BuildCrossMarketIndicatorSheet` | 可见/可隐藏 |
+| 汇率 | USDCNY/HKDCNY/KRWCNY/TWDCNY 期末和期均汇率 | `模块_抓汇率` | 可见 |
+| 跨市场_指标表 | 5 市场 18 项标准指标合并视图 | `BuildCrossMarketIndicatorSheet` | 可见/可隐藏 |
 | A股_资产负债表 | A 股资产负债表宽表 | 新浪财经路径 | 可见/可隐藏 |
 | A股_利润表 | A 股利润表宽表 | 新浪财经路径 | 可见/可隐藏 |
 | A股_现金流量表 | A 股现金流量表宽表 | 新浪财经路径 | 可见/可隐藏 |
@@ -122,9 +127,14 @@
 | 韩股_利润表 | 韩股利润表宽表 | stockanalysis KRX | 可见/可隐藏 |
 | 韩股_现金流量表 | 韩股现金流量表宽表 | stockanalysis KRX | 可见/可隐藏 |
 | 韩股_指标表 | 韩股 18 项标准指标 | 韩股三张基础表公式 | 可见/可隐藏 |
+| 台股_资产负债表 | 台股资产负债表宽表 | 公开台股财务报表 | 可见/可隐藏 |
+| 台股_利润表 | 台股利润表宽表 | 公开台股财务报表 | 可见/可隐藏 |
+| 台股_现金流量表 | 台股现金流量表宽表 | 公开台股财务报表 | 可见/可隐藏 |
+| 台股_指标表 | 台股 18 项标准指标 | 台股三张基础表公式 | 可见/可隐藏 |
 | 美股_抓取诊断 | 美股字段、HTTP、FX、QA 诊断 | `WriteDiagnosticForKind` / QA | 默认隐藏 |
 | 港股_抓取诊断 | 港股字段、HTTP、FX 诊断 | `WriteDiagnosticForKind` | 默认隐藏 |
 | 韩股_抓取诊断 | 韩股字段、HTTP、FX 诊断 | `WriteDiagnosticForKind` | 默认隐藏 |
+| 台股_抓取诊断 | 台股字段、HTTP、FX 诊断 | `WriteDiagnosticForKind` | 默认隐藏 |
 
 诊断 sheet 固定 17 列:
 
@@ -170,7 +180,7 @@ Q ErrorStage
 ### 4.2 跨市场指标表
 
 ```text
-1. BuildCrossMarketIndicatorSheet 读取 4 张分市场指标表。
+1. BuildCrossMarketIndicatorSheet 读取 5 张分市场指标表。
 2. CollectCompaniesFromIndicatorSheet 收集公司和报告期区块。
 3. 跨市场_指标表 横向铺 公司×报告期。
 4. 每个数值 cell 写公式引用分市场指标表。
@@ -192,11 +202,13 @@ Q ErrorStage
 ### 4.4 发布清理
 
 ```text
-CleanReleaseWorkbook
+tools/prepare_release.py
 ├─ 清样本池 cookie
-├─ 清三张诊断历史
+├─ 清 4 张诊断历史
+├─ 清分市场报表、跨市场指标表和汇率历史数据
 ├─ 清 .cache/
-└─ 提醒用户用 Excel 内置检查器清作者元数据
+├─ 生成 release/FinPrism-v1.1.xlsm 与 source xlsm
+└─ 写出 release notes 和 SHA256SUMS.txt
 ```
 
 ## 5. 关键 Invariants
@@ -218,8 +230,8 @@ CleanReleaseWorkbook
 - 样本池 Row 14+ 是用户录入区,装表和布局刷新不能清空。
 - 诊断 sheet 是 17 列结构,L:Q 必须保持文本格式。
 - `跨市场_指标表` 只保留指标合表,不恢复已删除的 BS/IS/CF 合表。
-- `汇率` sheet 8 列结构不能改。
-- 分市场 16 张正式表由抓数写入,显隐按钮只控制正式表。
+- `汇率` sheet 10 列结构不能改。
+- 分市场 20 张正式表由抓数写入,显隐按钮只控制正式表。
 - 诊断 sheet 默认隐藏,全局显隐按钮不展开诊断。
 
 ### 5.3 数据准确性
@@ -241,12 +253,11 @@ CleanReleaseWorkbook
 ## 6. 关键文件路径
 
 ```text
-VBA Captor/
+FinPrism/
 ├── 上市公司财务数据查询.xlsm
 ├── README.md
 ├── STATUS.md
 ├── ARCHITECTURE.md
-├── PHASE_4N_PLAN.md
 ├── modules/
 │   ├── JsonConverter.bas
 │   ├── 模块_AppStateGuard.bas
@@ -260,10 +271,12 @@ VBA Captor/
 │   ├── 模块_抓美股财报.bas
 │   ├── 模块_抓港股财报.bas
 │   ├── 模块_抓韩股财报.bas
+│   ├── 模块_抓台股财报.bas
 │   └── 模块_测试.bas
 ├── tools/
 │   ├── build_template.py
 │   ├── install_modules.py
+│   ├── prepare_release.py
 │   ├── test_fx_live.py
 │   ├── diff_phase4f_step3_lite.py
 │   ├── inspect_phase4g_state.py
@@ -295,6 +308,7 @@ VBA Captor/
 | 美股 fallback | 雪球 / stockanalysis | `CachedXueqiuHttpGet` / stockanalysis wrapper | 雪球需要 |
 | 港股财报 | 雪球 HK API | `CachedXueqiuHttpGet` | 需要 |
 | 韩股财报 | stockanalysis.com KRX 页面 | `StockAnalysisHttpGet` wrapper | 不需要 |
+| 台股财报 | FinMind public API | `RunCachedHttpGet` source=`FINMIND` | 不需要 |
 | 汇率 | 雪球 K 线 | `模块_抓汇率.EnsureFxRateCached` | 不需要 |
 
 HTTP 请求原则:
@@ -320,6 +334,7 @@ HTTP 请求原则:
 | `STOCKANALYSIS` | 24 | stockanalysis 通用路径 | HTML 更新低频 |
 | `STOCKANALYSIS_KR` | 24 | 韩股 stockanalysis | 日级足够 |
 | `STOCKANALYSIS_US` | 24 | 中概美股 fallback | 日级足够 |
+| `FINMIND` | 24 | 台股公开财报 JSON | 日级足够 |
 | `FX_KLINE` | 24 | 汇率 K 线 | 每日 close 后稳定 |
 | default | 24 | 未识别 source | 保守兜底 |
 
@@ -338,6 +353,7 @@ py -u tools/inspect_phase4k_state.py
 py -u tools/inspect_phase4l_state.py
 py -u tools/inspect_phase4m_state.py
 py tools/run_offline_tests.py
+py tools/check_indicator_formula_logic.py
 ```
 
 每项职责:
@@ -349,6 +365,7 @@ py tools/run_offline_tests.py
 - `inspect_phase4k_state.py`: Score 文本、FX missing、live FX UDF。
 - `inspect_phase4l_state.py`: HTTP/cache 遥测、SEC 限流、发布清理。
 - `inspect_phase4m_state.py`: 离线 fixture、QA、分源 TTL。
-- `run_offline_tests.py`: 8 个本地离线 smoke。
+- `run_offline_tests.py`: 本地离线 smoke。
+- `check_indicator_formula_logic.py`: 5 市场样本指标公式独立复算。
 
 新增 phase 后应优先复用上述 frozen 驱动,只有 state 结构变化时才新增 inspect。

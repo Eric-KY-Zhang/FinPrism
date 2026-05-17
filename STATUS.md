@@ -2036,3 +2036,95 @@ GPT 5.5 Pro 静态审阅 14 项 backlog,Phase 4k-4n 4 个 sprint 的处置:
 | P2-04 发布与版本管理 | ⏸️ 部分 ✅ Phase 4n | `ARCHITECTURE.md` + README release notes 已做;CHANGELOG/RELEASE_CHECKLIST defer |
 
 14 项中 9 项 ✅,5 项 defer/不做。优化阶段到 Phase 4n 收尾完成。
+
+---
+
+## FF. v1.1 发布准备: 台股接入 + README 说明集中化 + release 目录重建
+
+执行依据: 2026-05-17 用户要求。状态: ✅ Codex 已实现并重建发布目录。
+
+### FF.1 已完成
+
+- 台股功能进入发布基线:样本池、4 张台股报表、台股诊断、跨市场指标表和 TWD 汇率列均纳入安装/重装路径。
+- Excel 内不再保留单独「使用说明」sheet;使用说明、汇率说明和 FAQ 统一迁移到 `README.md`。
+- `汇率` sheet 调整为纯数据表: `报告期 + USDCNY/HKDCNY/KRWCNY/TWDCNY 期末/期均 + 备注/override`。
+- `tools/install_modules.py` 删除旧说明写入逻辑,重装时会删除遗留「使用说明」sheet 并清理旧 FX 说明残留。
+- `tools/build_template.py` 不再创建「使用说明」sheet。
+- 新增 `tools/prepare_release.py`,从当前 xlsm 生成 `release/FinPrism-v1.1.xlsm`、`FinPrism-v1.1-source.xlsm`、release notes 与 checksum。
+- 根目录可再生缓存/测试输出已清理,临时台股探针脚本已归档到 `archive/release-prep-20260517/`。
+
+### FF.2 验证结果
+
+| 项目 | 结果 |
+|---|---|
+| `py -m py_compile tools/install_modules.py tools/build_template.py tools/prepare_release.py` | PASS |
+| `py tools/check_indicator_formula_logic.py` | PASS;A/US/HK/KR/TW 五市场样本公式复算通过 |
+| `py tools/run_offline_tests.py` | PASS,10/10 |
+| `py tools/inspect_phase4g_round2.py` | PASS;5 市场按钮与 shared sheet 显隐边界通过 |
+| release workbook 结构检查 | PASS;无「使用说明」sheet,`汇率` A:J 纯表格,A:J 外无说明残留 |
+| `git diff --check` | PASS;仅 CRLF 提示 |
+
+### FF.3 发布产物
+
+`release/` 当前应包含:
+
+- `FinPrism-v1.1.xlsm`
+- `FinPrism-v1.1-source.xlsm`
+- `README.md`
+- `LICENSE`
+- `RELEASE_NOTES-v1.1.md`
+- `SHA256SUMS.txt`
+
+### FF.4 已知边界
+
+- `release/`、`.cache/`、`test_outputs/` 仍按 `.gitignore` 不入库;发布文件通过 GitHub Releases 分发。
+- `STATUS.md` 早期章节保留历史原文,其中关于「使用说明」sheet 和 4 市场的描述代表旧阶段,当前事实以本节、`README.md` 和 `ARCHITECTURE.md` 为准。
+
+---
+
+## GG. Phase 5a 收口(live verify 通过): 雪球 cookie 自动化
+
+**状态**:live verified — anon warmup works end-to-end without E5 cookie
+**目标**:消除样本池 `E5` 手动维护 `xq_a_token` 的痛点。
+
+### GG.1 已完成
+
+- [Change 1] `modules/模块_抓汇率.bas` 把 `FetchViaPowerShell` 从 `Private` 改为 `Public`,函数体不变。
+- [Change 2] `modules/模块_工具函数.bas` 的 `XueqiuHttpGet` 函数体替换为 `FetchViaPowerShell(strUrl, True)`;签名与 20+ 调用点完全兼容。
+- [Change 2b · hotfix] `modules/模块_抓港股财报.bas` + `模块_抓美股财报.bas` 删除 `If Len(strCookie)=0 Then Err.Raise` 早退保护——live verify 第一轮发现 Change 2 还不够,这两个 fetcher 在 E5 留空时仍直接抛错,导致 Change 1+2 在端到端层面形同虚设。删除后两路雪球抓数与 spec 目标对齐。
+- [Change 3] `modules/模块_测试.bas` 末尾追加 `Test_Phase5a_Xueqiu_AnonWarmup_Smoke` 与 `Test_Phase5a_NoCookieCellNeeded` 两个 live HTTP smoke 用例。
+- [Change 4] 生成 `scripts/phase5a_update_doc_cells.py`(默认 dry-run,需备份后 `--apply`)。当前 workbook dry-run 仅 1 处计划改动:样本池!A5 标签改名。
+- [Change 5] 新增项目根 `PHASE5A_CHANGELOG.md`,含改动摘要、live verify 结果、已知风险、回滚指引。
+- [Change 6] 新增 `tools/phase5a_live_verify.py`(本轮 live 验证 driver,可复用)。
+
+### GG.2 Live verification 结果(2026-05-17)
+
+`py tools/phase5a_live_verify.py` 在 xlsm 副本上跑完 6 步,E5 临时清空,完成后还原:
+
+| 步骤 | 结果 |
+|---|---|
+| Step 2 smoke | PASS / PASS(live HTTP 双用例) |
+| Step 3 一键港股 (E5 空,00700/09988/02519) | **30.7s,114 OK_XUEQIU + 43 MISSING,HTTP 全 200,零 4xx** |
+| Step 4 一键美股 (E5 空,BABA/JD/AAPL) | **67.5s;BABA/JD 走 Xueqiu fallback,AAPL 走 EDGAR**;187 OK_XUEQIU + 101 EDGAR OK + 60 MISSING + 8 RECOMMEND_FUZZY,零 4xx |
+| Step 5 offline regression | 3/3 PASS(FX_Missing / HK_Aoji / TW_TSMC) |
+| Step 6 HK perf 5 家全 fresh fetch (00700/00939/00941/00388/01024) | **50.7s,188 OK_XUEQIU + 22 MISSING,零 4xx**(Phase 5b 优化基线) |
+
+09988 (阿里巴巴-W) 在 Step 3 显示 43 MISSING、source `—`:阿里 3 月财年口径
+属于历史已知边界(Phase 4i `StandardTargetPeriodWanted` 留有钩子),
+与 Phase 5a 无关,不是本轮回归。
+
+### GG.3 已知风险(详见 PHASE5A_CHANGELOG §3)
+
+- PowerShell 启动开销实测:5 家港股全 fresh fetch 50.7s,相比 Phase 4n
+  WinHttp 大约慢一倍,落在 spec 预测的 30-60 秒区间内。
+- 匿名 session 限流可能比登录态严:本轮实测零 4xx,但样本只 5 家。
+- 未做 token 复用 / PowerShell 长连接,留给 Phase 5b 优化。
+- 仅雪球路径改动;EDGAR / StockAnalysis / FinMind / AkShare / 新浪 路径未触碰
+  (Step 4 已验证 AAPL EDGAR 主路径与本轮改动并存)。
+
+### GG.4 不变量保护
+
+- 4 市场 + 台股的 5 张分市场表 + 跨市场指标表保留。
+- 诊断 17 列、AppStateGuard、cache TTL、RMB toggle、FX_MISSING 诊断行为不变。
+- 样本池 Row 14+ 用户录入数据未触碰。
+- `ReadXueqiuCookie()` 保留,E5 即便用户继续填 token 也不会报错。

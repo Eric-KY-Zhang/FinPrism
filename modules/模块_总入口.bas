@@ -7,7 +7,7 @@ Option Explicit
 '  许可: 个人 / 内部使用; 数据来源遵循各源站 Fair Use / Terms
 '  开发期: 2026-05-02 ~ 2026-05-05 (vibe coding, 4 天 12 phase)
 '
-'  Sub 一键全抓: 顺序调用 A 股 + 美股 + 港股 + 韩股 16 张表, 静默模式, 最后弹一次汇总
+'  Sub 一键全抓: 顺序调用 A 股 + 美股 + 港股 + 韩股 + 台股 20 张表, 静默模式, 最后弹一次汇总
 '  基本资料 已废弃
 ' =================================================================
 
@@ -189,6 +189,51 @@ CleanUp:
 End Sub
 
 
+Public Sub 一键台股(Optional ByVal blnSilent As Boolean = False)
+    Dim dtTime As Double: dtTime = Timer
+    Dim runErrDesc As String
+    Dim appState As TAppState
+    Dim hasAppState As Boolean
+
+    g_silentMode = True
+    g_globalFails = 0
+    g_globalLog = ""
+    On Error GoTo CleanUp
+    appState = BeginAppState("正在抓取 台股...")
+    hasAppState = True
+    g_diagnosticSheetName = "台股_抓取诊断"
+    ClearDiagnosticSheet
+    g_diagnosticAppendOnly = True
+
+    Application.StatusBar = "[台股 1/4] 抓取资产负债表..."
+    模块_抓台股资产负债表.Main
+    Application.StatusBar = "[台股 2/4] 抓取利润表..."
+    模块_抓台股利润表.Main
+    Application.StatusBar = "[台股 3/4] 抓取现金流量表..."
+    模块_抓台股现金流量表.Main
+    Application.StatusBar = "[台股 4/4] 生成指标表..."
+    模块_抓台股指标表.Main
+    UnhideMarketTabs "TW"
+
+CleanUp:
+    If Err.Number <> 0 Then
+        runErrDesc = vbCrLf & vbCrLf & "运行中断: " & Err.Description
+        Err.Clear
+    End If
+    g_silentMode = False
+    g_diagnosticAppendOnly = False
+    If hasAppState Then
+        EndAppState appState
+    Else
+        Application.StatusBar = False
+        Application.ScreenUpdating = True
+    End If
+    If Len(runErrDesc) > 0 Then Application.StatusBar = "一键 台股出错: " & runErrDesc
+
+    If Not blnSilent Then ShowMarketRunSummary "台股", dtTime, runErrDesc
+End Sub
+
+
 Public Sub 切换A股tabs()
     ToggleMarketTabsVisibility "A"
 End Sub
@@ -206,6 +251,11 @@ End Sub
 
 Public Sub 切换韩股tabs()
     ToggleMarketTabsVisibility "KR"
+End Sub
+
+
+Public Sub 切换台股tabs()
+    ToggleMarketTabsVisibility "TW"
 End Sub
 
 
@@ -231,7 +281,7 @@ End Sub
 
 
 Private Function IsOfficialMarketSheet(ByVal ws As Worksheet) As Boolean
-    Dim prefixes As Variant: prefixes = Array("A股_", "美股_", "港股_", "韩股_")
+    Dim prefixes As Variant: prefixes = Array("A股_", "美股_", "港股_", "韩股_", "台股_")
     Dim p As Variant
     For Each p In prefixes
         If Left$(ws.Name, Len(CStr(p))) = CStr(p) _
@@ -250,6 +300,7 @@ Private Sub ToggleMarketTabsVisibility(ByVal market As String)
         Case "US": prefix = "美股_"
         Case "HK": prefix = "港股_"
         Case "KR": prefix = "韩股_"
+        Case "TW": prefix = "台股_"
         Case Else: Exit Sub
     End Select
 
@@ -282,6 +333,7 @@ Public Sub UnhideMarketTabs(ByVal market As String)
         Case "US": prefix = "美股_"
         Case "HK": prefix = "港股_"
         Case "KR": prefix = "韩股_"
+        Case "TW": prefix = "台股_"
         Case Else: Exit Sub
     End Select
 
@@ -323,6 +375,7 @@ Public Sub 一键清空所有数据(Optional ByVal blnSilent As Boolean = False)
         "美股_资产负债表", "美股_利润表", "美股_现金流量表", "美股_指标表", _
         "港股_资产负债表", "港股_利润表", "港股_现金流量表", "港股_指标表", _
         "韩股_资产负债表", "韩股_利润表", "韩股_现金流量表", "韩股_指标表", _
+        "台股_资产负债表", "台股_利润表", "台股_现金流量表", "台股_指标表", _
         "跨市场_指标表")
         clearedCount = clearedCount + ClearSheetContentsIfExists(CStr(sheetName))
     Next sheetName
@@ -330,6 +383,7 @@ Public Sub 一键清空所有数据(Optional ByVal blnSilent As Boolean = False)
     clearedCount = clearedCount + ClearDiagnosticRowsIfExists("美股_抓取诊断")
     clearedCount = clearedCount + ClearDiagnosticRowsIfExists("港股_抓取诊断")
     clearedCount = clearedCount + ClearDiagnosticRowsIfExists("韩股_抓取诊断")
+    clearedCount = clearedCount + ClearDiagnosticRowsIfExists("台股_抓取诊断")
 
 CleanUp:
     If Err.Number <> 0 Then
@@ -391,6 +445,7 @@ Private Function MarketHasPoolRows(ByVal marketKey As String) As Boolean
         Case "US": codeCol = POOL_US_CODE_COL
         Case "HK": codeCol = POOL_HK_CODE_COL
         Case "KR": codeCol = POOL_KR_CODE_COL
+        Case "TW": codeCol = POOL_TW_CODE_COL
         Case Else: Exit Function
     End Select
 
@@ -479,6 +534,8 @@ Public Sub 一键全抓(Optional ByVal blnSilent As Boolean = False)
     ClearDiagnosticSheet
     g_diagnosticSheetName = "韩股_抓取诊断"
     ClearDiagnosticSheet
+    g_diagnosticSheetName = "台股_抓取诊断"
+    ClearDiagnosticSheet
     g_diagnosticAppendOnly = True
 
     If MarketHasPoolRows("A") Then
@@ -549,6 +606,23 @@ Public Sub 一键全抓(Optional ByVal blnSilent As Boolean = False)
         UnhideMarketTabs "KR"
     End If
 
+    If MarketHasPoolRows("TW") Then
+        hasAnyMarket = True
+        Application.StatusBar = "[台股 1/4] 抓取资产负债表..."
+        DoEvents
+        模块_抓台股资产负债表.Main
+        Application.StatusBar = "[台股 2/4] 抓取利润表..."
+        DoEvents
+        模块_抓台股利润表.Main
+        Application.StatusBar = "[台股 3/4] 抓取现金流量表..."
+        DoEvents
+        模块_抓台股现金流量表.Main
+        Application.StatusBar = "[台股 4/4] 生成指标表..."
+        DoEvents
+        模块_抓台股指标表.Main
+        UnhideMarketTabs "TW"
+    End If
+
     ' Phase 4j.1: 一键全抓后只刷新跨市场指标表
     On Error Resume Next
     BuildCrossMarketIndicatorSheet
@@ -573,7 +647,7 @@ CleanUp:
     End If
 
     Dim msg As String
-    msg = "一键全抓完成 (A股 + 美股 + 港股 + 韩股)" & vbCrLf & _
+    msg = "一键全抓完成 (A股 + 美股 + 港股 + 韩股 + 台股)" & vbCrLf & _
           "总用时: " & Format(Timer - dtTime, "0.0 秒")
     If Not hasAnyMarket Then
         msg = msg & vbCrLf & "未检测到样本池公司, 未执行抓数。"

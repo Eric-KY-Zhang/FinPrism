@@ -20,10 +20,53 @@ MOCK_FIXTURES = {
         '{"data":{"quote_name":"Tencent","currency":"CNY","currency_name":"RMB",'
         '"list":[{"report_date":"2024-12-31","ta":1000,"tlia":400,"teqy":600}]}}\n'
     ),
+    "xueqiu_hk_02519_balance.json": (
+        '{"data":{"quote_name":"Aoji Holdings","currency":"CNY","currency_name":"RMB",'
+        '"list":[{"ed":"2025-12-31","ta":[10134961000],"tlia":[6982303000],'
+        '"teqy":[3152658000],"shhfd":[3132425000],"ca":[5997382000],'
+        '"clia":[4013762000],"iv":[1627440000],"inv":[296969000],'
+        '"trrb":[1560190000],"trx":[2717219000],"trpy":[1698174000]}]}}\n'
+    ),
+    "xueqiu_hk_02519_income.json": (
+        '{"data":{"quote_name":"Aoji Holdings","currency":"CNY","currency_name":"RMB",'
+        '"list":[{"ed":"2025-12-31","tto":[13698738000],"slgcost":[10090568000],'
+        '"fcgcost":[264360000],"gp":[3608170000],"ploashh":[161139000],'
+        '"beps_aju":[0.3909801455],"deps_aju":[0.3909801455]}]}}\n'
+    ),
+    "xueqiu_hk_02519_cash_flow.json": (
+        '{"data":{"quote_name":"Aoji Holdings","currency":"CNY","currency_name":"RMB",'
+        '"list":[{"ed":"2025-12-31","nocf":[630876000],"adtfxda":[-252696000],'
+        '"fxdiodtinstr":[0],"rpafxdiodtinstr":[0],"cceqeyr":[1613126000]}]}}\n'
+    ),
     "stockanalysis_kr_005930_income.html": (
         "<html><head><title>Samsung Electronics Co. Ltd. Income Statement</title></head>"
         "<body><script>var financialData={\"revenue\":[1000,900],\"opinc\":[200,180],"
         "\"netinc\":[150,120]};</script>005930</body></html>\n"
+    ),
+    "finmind_tw_2330_income.json": (
+        '{"status":200,"msg":"success","data":['
+        '{"date":"2025-12-31","stock_id":"2330","type":"Revenue","value":1046090421000,"origin_name":"营业收入"},'
+        '{"date":"2025-12-31","stock_id":"2330","type":"CostOfGoodsSold","value":394103585000,"origin_name":"营业成本"},'
+        '{"date":"2025-12-31","stock_id":"2330","type":"GrossProfit","value":651986836000,"origin_name":"营业毛利"},'
+        '{"date":"2025-12-31","stock_id":"2330","type":"OperatingExpenses","value":88190790000,"origin_name":"营业费用"},'
+        '{"date":"2025-12-31","stock_id":"2330","type":"EquityAttributableToOwnersOfParent","value":505743990000,"origin_name":"归属于母公司业主净利"},'
+        '{"date":"2025-12-31","stock_id":"2330","type":"EPS","value":19.51,"origin_name":"基本每股盈余"}]}\n'
+    ),
+    "finmind_tw_2330_balance.json": (
+        '{"status":200,"msg":"success","data":['
+        '{"date":"2025-12-31","stock_id":"2330","type":"CashAndCashEquivalents","value":2767856402000,"origin_name":"现金及约当现金"},'
+        '{"date":"2025-12-31","stock_id":"2330","type":"Inventories","value":288109485000,"origin_name":"存货"},'
+        '{"date":"2025-12-31","stock_id":"2330","type":"CurrentAssets","value":3817130817000,"origin_name":"流动资产合计"},'
+        '{"date":"2025-12-31","stock_id":"2330","type":"TotalAssets","value":7933023878000,"origin_name":"资产总计"},'
+        '{"date":"2025-12-31","stock_id":"2330","type":"Liabilities","value":2472228595000,"origin_name":"负债总计"},'
+        '{"date":"2025-12-31","stock_id":"2330","type":"EquityAttributableToOwnersOfParent","value":5419595994000,"origin_name":"归属于母公司业主权益"}]}\n'
+    ),
+    "finmind_tw_2330_cash_flow.json": (
+        '{"status":200,"msg":"success","data":['
+        '{"date":"2025-12-31","stock_id":"2330","type":"CashFlowsFromOperatingActivities","value":2274975625000,"origin_name":"营业活动现金流量"},'
+        '{"date":"2025-12-31","stock_id":"2330","type":"Depreciation","value":679683958000,"origin_name":"折旧费用"},'
+        '{"date":"2025-12-31","stock_id":"2330","type":"AmortizationExpense","value":8412412000,"origin_name":"摊销费用"},'
+        '{"date":"2025-12-31","stock_id":"2330","type":"CashBalancesEndOfPeriod","value":2767856402000,"origin_name":"期末现金及约当现金"}]}\n'
     ),
     "fx_usdcny_kline.json": (
         '{"data":{"symbol":"USDCNY.FX","item":[{"timestamp":1735603200000,'
@@ -47,7 +90,9 @@ MOCK_FIXTURES = {
 TEST_MACROS = [
     "Test_Offline_US_Edgar_AAPL",
     "Test_Offline_HK_Xueqiu_Tencent",
+    "Test_Offline_HK_Aoji_FieldSemantics",
     "Test_Offline_KR_StockAnalysis_Samsung",
+    "Test_Offline_TW_FinMind_TSMC",
     "Test_Offline_FX_Missing_DoesNotFallbackToOne",
     "Test_Offline_Diagnostic_Score_NotDate",
     "Test_Offline_Cache_HitMissExpired",
