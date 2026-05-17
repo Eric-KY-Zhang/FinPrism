@@ -550,10 +550,12 @@ def layout_sample_pool(ws_pool):
     except Exception:
         pass
 
+    # Phase 5a: row 5 (雪球 Cookie) 已弃用 (匿名 warmup), 不再渲染。
+    # 保留 row 6 = 显示币种, 让 row 5 留空进入面板边框,形同 1 行 spacer。
+    # 不动 ReadDisplayCurrency 等下游 30+ 处对 E6 的引用。
     config_rows = [
         (3, "年份（留空=取最新）", year_value),
         (4, "Q1/Q2/Q3/Q4 或 全部", quarter_value),
-        (5, "雪球 Cookie", cookie_value),
         (6, "显示币种", currency_value),
     ]
     for row, label, value in config_rows:
@@ -602,6 +604,9 @@ def layout_sample_pool(ws_pool):
     except Exception as e:
         print(f"  ! E6 数据验证添加失败: {e}")
 
+    # Phase 5a: 也清掉残留的 E5 comment (老 workbook 升级后可能仍带"雪球
+    # Cookie 用法"批注),以及 E6 上历史的 currency 注释——E6 注释由
+    # install_currency_toggle_cell() 在更下游统一重写。
     for addr in ("E5", "E6"):
         try:
             if ws_pool.Range(addr).Comment is not None:

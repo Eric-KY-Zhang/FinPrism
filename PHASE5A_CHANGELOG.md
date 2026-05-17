@@ -18,7 +18,7 @@
 | 2 | `modules/模块_工具函数.bas` | `XueqiuHttpGet` 函数体替换为 `FetchViaPowerShell(strUrl, True)`;签名不变,`strCookie` 参数保留以兼容 20+ 调用点 |
 | 2b | `modules/模块_抓港股财报.bas`<br>`modules/模块_抓美股财报.bas` | **Hotfix (live verify 发现)**: 删除 `If Len(strCookie)=0 Then Err.Raise` 早退保护。原 guard 让 E5 留空时整个 HK / 雪球 US fallback 路径直接抛错,导致改动 1+2 形同虚设。删除后下游 `XueqiuHttpGet` 自己 warmup,与 spec 目标一致。 |
 | 3 | `modules/模块_测试.bas` | 文件末尾追加 `Test_Phase5a_Xueqiu_AnonWarmup_Smoke` 和 `Test_Phase5a_NoCookieCellNeeded` 两个 live smoke 用例 |
-| 4 | `scripts/phase5a_update_doc_cells.py` | openpyxl 脚本;**未自动执行**,需用户备份 xlsm 后手动 `--dry-run` → `--apply` (当前 workbook 仅 1 处计划改动: 样本池!A5 标签重命名) |
+| 4 | `tools/install_modules.py` | `layout_sample_pool` 的 `config_rows` 删除 `(5, "雪球 Cookie", ...)` 一项。重装后 row 5 留空(仍在面板边框内,看起来像一行 spacer)。**不动 ReadDisplayCurrency 对 E6 的引用 (30+ 处)**。原 spec 里的 `scripts/phase5a_update_doc_cells.py` openpyxl 脚本已删除——见下 §3a。 |
 
 未改:
 - `ReadXueqiuCookie()` 保持原状,E5 即便用户继续填 token 也不会报错。
@@ -36,6 +36,31 @@
 - `FetchViaPowerShell` 在 [`modules/模块_抓汇率.bas:61-120`](modules/%E6%A8%A1%E5%9D%97_%E6%8A%93%E6%B1%87%E7%8E%87.bas#L61)
   已用 `HttpClient + UseCookies=$true + AutomaticDecompression(GZip,Deflate)`
   正确实现 warmup → session token 提取 → 目标 URL 拉取的完整流程。
+
+## 3a. ⚠️ openpyxl 杀按钮 (live-fire 踩坑实录)
+
+最初的 spec Change 4 用 `openpyxl.load_workbook(..., keep_vba=True)` +
+`wb.save(...)` 来改 `样本池!A5` 文案。**这是错的**:
+
+- `keep_vba=True` 只保留 vbaProject.bin (VBA 代码)。
+- **不保留** worksheet 上的 `Shape` / form-control 按钮 / OnAction 绑定。
+- 跑 `wb.save(book)` 后,所有 `_apply_card_brand` 创建的圆角矩形按钮 + 它们的
+  `OnAction = "模块_总入口.一键港股"` 等绑定**全部消失**。用户打开 xlsm
+  会看到一个静态布局,点哪都没反应——但 VBA 模块还在,VBE 立即窗口
+  调 `一键港股` 仍能正常跑。
+
+修复路径:**永远不要用 openpyxl 写 xlsm 里有按钮的工作表**。同步操作
+统一走 `tools/install_modules.py` 的 Excel COM 路径(它已经处理按钮重建)。
+
+具体本轮做的:
+
+1. **删除** `scripts/phase5a_update_doc_cells.py` 和 `tools/phase5a_inspect_doc_cells.py`
+   两个 openpyxl 脚本。
+2. **改在** `install_modules.py` 内移除 row 5 `(5, "雪球 Cookie", ...)`,
+   重装后 row 5 留空、A5 不再出现"已弃用"标签。
+3. **重装 + COM 路径** 重新建出 15 个按钮(BtnRunAll / BtnRunA…TW /
+   BtnHide*  / BtnBuildCrossInd / BtnClearAllData / BtnClearCache 等),
+   全部 OnAction 验证通过(`tools/probe_button_bindings.py` 输出 15/15 OK)。
 
 ## 3. 已知风险
 

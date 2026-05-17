@@ -2093,9 +2093,9 @@ GPT 5.5 Pro 静态审阅 14 项 backlog,Phase 4k-4n 4 个 sprint 的处置:
 - [Change 2] `modules/模块_工具函数.bas` 的 `XueqiuHttpGet` 函数体替换为 `FetchViaPowerShell(strUrl, True)`;签名与 20+ 调用点完全兼容。
 - [Change 2b · hotfix] `modules/模块_抓港股财报.bas` + `模块_抓美股财报.bas` 删除 `If Len(strCookie)=0 Then Err.Raise` 早退保护——live verify 第一轮发现 Change 2 还不够,这两个 fetcher 在 E5 留空时仍直接抛错,导致 Change 1+2 在端到端层面形同虚设。删除后两路雪球抓数与 spec 目标对齐。
 - [Change 3] `modules/模块_测试.bas` 末尾追加 `Test_Phase5a_Xueqiu_AnonWarmup_Smoke` 与 `Test_Phase5a_NoCookieCellNeeded` 两个 live HTTP smoke 用例。
-- [Change 4] 生成 `scripts/phase5a_update_doc_cells.py`(默认 dry-run,需备份后 `--apply`)。当前 workbook dry-run 仅 1 处计划改动:样本池!A5 标签改名。
-- [Change 5] 新增项目根 `PHASE5A_CHANGELOG.md`,含改动摘要、live verify 结果、已知风险、回滚指引。
-- [Change 6] 新增 `tools/phase5a_live_verify.py`(本轮 live 验证 driver,可复用)。
+- [Change 4 · v2] `tools/install_modules.py` 的 `layout_sample_pool` 删除 `(5, "雪球 Cookie", ...)`。重装后 row 5 留空,不再渲染"已弃用"标签。**原 v1 方案** (openpyxl 脚本 `scripts/phase5a_update_doc_cells.py`) **已废**:openpyxl 保留 VBA 代码但**会清掉 worksheet 上所有 Shape / OnAction 绑定**,导致 15 个按钮全部点不动。详见 PHASE5A_CHANGELOG §3a。
+- [Change 5] 新增项目根 `PHASE5A_CHANGELOG.md`,含改动摘要、live verify 结果、openpyxl 踩坑实录、已知风险、回滚指引。
+- [Change 6] 新增 `tools/phase5a_live_verify.py`(本轮 live 验证 driver,可复用)+ `tools/probe_button_bindings.py`(按钮绑定核查工具)。
 
 ### GG.2 Live verification 结果(2026-05-17)
 
